@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🌧️ Пиксельный RainRadar — без сглаживания (iOS fix)</title>
+    <title>🌧️ Пиксельный RainRadar — обновлённая палитра</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -11,7 +11,7 @@
             background:#0a0a0f;
             font-family:'Segoe UI',Roboto,system-ui,sans-serif;
             height:100vh; display:flex; flex-direction:column;
-            touch-action:pan-x pan-y pinch-zoom; /* улучшает жесты на мобильных */
+            touch-action:pan-x pan-y pinch-zoom;
         }
         .header {
             background:#0d0d1a; padding:12px 16px; color:#e0e0e0;
@@ -58,8 +58,6 @@
         .leaflet-control-zoom a { background:#141428 !important; color:#ccc !important; border-color:#2a2a45 !important; }
         .leaflet-control-attribution { background:rgba(10,10,20,0.8) !important; color:#666 !important; font-size:0.6rem; }
         .leaflet-control-attribution a { color:#888 !important; }
-
-        /* Жёсткое отключение сглаживания для всех canvas внутри Leaflet */
         .leaflet-tile-container canvas,
         .leaflet-tile {
             image-rendering: pixelated !important;
@@ -69,7 +67,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🌧️ RainRadar <span style="color:#666;font-size:0.8rem;">пиксельный</span></h1>
+        <h1>🌧️ RainRadar <span style="color:#666;font-size:0.8rem;">пиксельный dBZ</span></h1>
         <div class="controls">
             <span id="timestampDisplay">⏱ загрузка...</span>
             <button id="btnPrev30">◀ -30м</button>
@@ -119,16 +117,13 @@
             const now = Math.floor(Date.now() / 1000);
             return Math.floor((now - RADAR_DELAY) / 600) * 600;
         }
-
         currentTimestamp = getLatestRadarTimestamp();
 
-        // ---------- Карта ----------
         const map = L.map('map', {
             center: [defaultLat, defaultLon],
             zoom: defaultZoom,
             maxZoom: MAX_DISPLAY_ZOOM,
-            zoomControl: true,
-            attributionControl: true
+            zoomControl: true
         });
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -137,7 +132,7 @@
             maxZoom: MAX_DISPLAY_ZOOM
         }).addTo(map);
 
-        // ---------- НОВАЯ ПАЛИТРА дБЗ (строго по списку) ----------
+        // ---------- НОВАЯ ПАЛИТРА (по запросу) ----------
         const radarPalette = [
             { value: 80, color: [0, 0, 0] },               // чёрный
             { value: 75, color: [80, 40, 10] },            // тёмно-коричневый
@@ -146,8 +141,7 @@
             { value: 50, color: [255, 0, 0] },             // красный
             { value: 45, color: [255, 100, 0] },           // тёмно-оранжевый
             { value: 40, color: [255, 165, 0] },           // оранжевый
-            { value: 35, color: [255, 255, 0] },           // жёлтый
-            { value: 25, color: [255, 255, 100] },         // светло-жёлтый
+            { value: 25, color: [255, 255, 0] },           // жёлтый (25 dBZ, без светло-жёлтого)
             { value: 20, color: [0, 128, 0] },             // тёмно-зелёный
             { value: 15, color: [0, 200, 0] },             // зелёный
             { value: 10, color: [0, 255, 100] },           // светло-зелёный
@@ -164,13 +158,12 @@
             return null;
         }
 
-        // ---------- Легенда (динамическая) ----------
+        // Динамическая легенда
         function buildLegend() {
             const legendDiv = document.getElementById('legendContainer');
             legendDiv.innerHTML = '';
-            // снизу вверх от слабых к сильным? Покажем в порядке возрастания
             const ascending = [...radarPalette].reverse();
-            ascending.forEach((item, idx) => {
+            ascending.forEach(item => {
                 const [r,g,b] = item.color;
                 const div = document.createElement('div');
                 div.className = 'legend-item';
@@ -180,12 +173,10 @@
         }
         buildLegend();
 
-        // ---------- Пикселизация + масштабирование ----------
+        // Пикселизация (без сглаживания, работает в Safari)
         function pixelateAndScale(sourceCanvas, pixelSize, scale) {
             const srcW = sourceCanvas.width;
             const srcH = sourceCanvas.height;
-
-            // 1. Усредняем до маленького холста
             const smallW = Math.ceil(srcW / pixelSize);
             const smallH = Math.ceil(srcH / pixelSize);
             const smallCanvas = document.createElement('canvas');
@@ -204,15 +195,14 @@
                     const startY = py * pixelSize;
                     const endX = Math.min(startX + pixelSize, srcW);
                     const endY = Math.min(startY + pixelSize, srcH);
-
                     for (let y = startY; y < endY; y++) {
                         for (let x = startX; x < endX; x++) {
                             const idx = (y * srcW + x) * 4;
-                            if (data[idx + 3] > 0) {
+                            if (data[idx+3] > 0) {
                                 totalR += data[idx];
-                                totalG += data[idx + 1];
-                                totalB += data[idx + 2];
-                                totalA += data[idx + 3];
+                                totalG += data[idx+1];
+                                totalB += data[idx+2];
+                                totalA += data[idx+3];
                                 count++;
                             }
                         }
@@ -226,27 +216,22 @@
                 }
             }
 
-            // 2. Масштабируем с отключением сглаживания (важно для Safari)
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = smallW * scale;
             finalCanvas.height = smallH * scale;
             const finalCtx = finalCanvas.getContext('2d');
             finalCtx.imageSmoothingEnabled = false;
-            finalCtx.webkitImageSmoothingEnabled = false;   // Safari / старый WebKit
-            finalCtx.mozImageSmoothingEnabled = false;      // Firefox
+            finalCtx.webkitImageSmoothingEnabled = false;
+            finalCtx.mozImageSmoothingEnabled = false;
             finalCtx.drawImage(smallCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-
             return finalCanvas;
         }
 
-        // ---------- Кастомный тайловый слой ----------
         const RadarCanvasLayer = L.TileLayer.extend({
             createTile: function(coords, done) {
                 const tile = document.createElement('canvas');
                 tile.width = 256;
                 tile.height = 256;
-
-                // Принудительно убираем сглаживание CSS
                 tile.style.imageRendering = 'pixelated';
                 tile.style.imageRendering = 'crisp-edges';
                 tile.style.setProperty('image-rendering', 'pixelated', 'important');
@@ -266,7 +251,6 @@
                     const imageData = tempCtx.getImageData(0, 0, 256, 256);
                     const pixels = imageData.data;
 
-                    // Применяем палитру
                     for (let i = 0; i < pixels.length; i += 4) {
                         const intensity = Math.round((pixels[i] + pixels[i+1] + pixels[i+2]) / 3);
                         const alpha = pixels[i+3];
@@ -276,7 +260,7 @@
                                 pixels[i] = color[0];
                                 pixels[i+1] = color[1];
                                 pixels[i+2] = color[2];
-                                pixels[i+3] = 210; // непрозрачность
+                                pixels[i+3] = 210;
                             }
                         } else {
                             pixels[i+3] = 0;
@@ -284,7 +268,6 @@
                     }
                     tempCtx.putImageData(imageData, 0, 0);
 
-                    // Пикселизация (если включена)
                     const finalCtx = tile.getContext('2d');
                     finalCtx.imageSmoothingEnabled = false;
                     finalCtx.webkitImageSmoothingEnabled = false;
@@ -318,7 +301,6 @@
             bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0])
         }).addTo(map);
 
-        // ---------- Слой меток ----------
         const labelsLayer = L.tileLayer('', {
             opacity: 0.8,
             minZoom: 3,
@@ -356,7 +338,6 @@
                 (z > MAX_NATIVE_ZOOM ? ' (цифровой)' : '');
         }
 
-        // ---------- Обработчики ----------
         document.getElementById('opacitySlider').addEventListener('input', function(e) {
             currentOpacity = parseInt(e.target.value) / 100;
             radarLayer.setOpacity(currentOpacity);
