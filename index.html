@@ -2,365 +2,1158 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🌧️ Пиксельный RainRadar — обновлённая палитра</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>🌧️ RainRadar Pro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            background:#0a0a0f;
-            font-family:'Segoe UI',Roboto,system-ui,sans-serif;
-            height:100vh; display:flex; flex-direction:column;
-            touch-action:pan-x pan-y pinch-zoom;
+        :root {
+            --bg-primary: #08080f;
+            --bg-card: #111120;
+            --border: #1e1e35;
+            --accent: #4a9eff;
+            --accent-dim: #2a5a9f;
+            --text-primary: #e0e0f0;
+            --text-secondary: #8888aa;
+            --text-muted: #555570;
+            --warn: #f0c060;
+            --success: #44cc88;
+            --radius: 8px;
+            --radius-lg: 14px;
+            --header-h: 56px;
+            --timeline-h: 64px;
         }
-        .header {
-            background:#0d0d1a; padding:12px 16px; color:#e0e0e0;
-            display:flex; align-items:center; justify-content:space-between;
-            flex-wrap:wrap; gap:10px; border-bottom:1px solid #1e1e35;
-            z-index:1000;
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            background: var(--bg-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: var(--text-primary);
+            overflow: hidden;
+            user-select: none;
         }
-        .header h1 { font-size:1.2rem; font-weight:500; color:#4a9eff; }
-        .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-        .controls button {
-            background:#141428; color:#ccc; border:1px solid #2a2a45;
-            padding:6px 12px; border-radius:6px; cursor:pointer;
-            font-size:0.85rem; transition:0.2s; white-space:nowrap;
+
+        #header {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: var(--header-h);
+            background: rgba(13,13,26,0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px; z-index: 2000;
         }
-        .controls button:hover { background:#1e1e3a; border-color:#4a9eff; color:#fff; }
-        #timestampDisplay {
-            color:#f0c060; font-weight:600; font-size:0.85rem;
-            background:#141428; padding:6px 12px; border-radius:20px;
-            border:1px solid #2a2a45; min-width:160px; text-align:center;
+
+        .logo {
+            font-size: 1.1rem; font-weight: 700;
+            color: var(--accent); white-space: nowrap;
         }
-        #map { flex:1; width:100%; background:#0a0a14; }
-        .status-bar {
-            position:absolute; bottom:25px; left:15px;
-            background:rgba(10,10,20,0.9); padding:6px 12px;
-            border-radius:8px; z-index:999; color:#aaa;
-            font-size:0.72rem; border:1px solid #2a2a45; pointer-events:none;
+        .logo span { color: var(--text-secondary); font-weight: 400; font-size: 0.72rem; }
+
+        #timestamp-pill {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 5px 14px;
+            font-size: 0.82rem; font-weight: 600; color: var(--warn);
+            min-width: 175px; text-align: center; white-space: nowrap;
         }
-        .legend {
-            position:absolute; bottom:25px; right:15px;
-            background:rgba(10,10,20,0.9); padding:10px 14px;
-            border-radius:12px; z-index:999; color:#ccc;
-            font-size:0.75rem; border:1px solid #2a2a45; pointer-events:none;
+        #timestamp-pill.future { color: #88aaff; }
+
+        .spacer { flex: 1; }
+
+        #layer-switcher {
+            display: flex; align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px; overflow: hidden; flex-shrink: 0;
         }
-        .legend .dot { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:6px; }
-        .legend-item { display:flex; align-items:center; margin-bottom:2px; }
-        .pixel-control { display:flex; align-items:center; gap:6px; }
-        .pixel-control label { color:#aaa; font-size:0.8rem; }
-        .pixel-control select {
-            background:#141428; color:#ccc; border:1px solid #2a2a45;
-            padding:4px 8px; border-radius:4px; font-size:0.85rem; cursor:pointer;
+        .layer-btn {
+            padding: 7px 16px; font-size: 0.82rem;
+            cursor: pointer; border: none;
+            background: transparent; color: var(--text-secondary);
+            transition: 0.15s; white-space: nowrap;
+            border-right: 1px solid var(--border);
         }
-        #opacityValue { color:#4a9eff; min-width:35px; }
-        .leaflet-container { background:#0a0a14 !important; }
-        .leaflet-control-zoom a { background:#141428 !important; color:#ccc !important; border-color:#2a2a45 !important; }
-        .leaflet-control-attribution { background:rgba(10,10,20,0.8) !important; color:#666 !important; font-size:0.6rem; }
-        .leaflet-control-attribution a { color:#888 !important; }
-        .leaflet-tile-container canvas,
-        .leaflet-tile {
-            image-rendering: pixelated !important;
-            image-rendering: crisp-edges !important;
+        .layer-btn:last-child { border-right: none; }
+        .layer-btn:hover { color: #fff; background: #1a1a32; }
+        .layer-btn.active-radar { background: rgba(74,158,255,0.2); color: #7ac0ff; font-weight: 600; }
+        .layer-btn.active-wx    { background: rgba(100,220,120,0.2); color: #66dd88; font-weight: 600; }
+
+        .btn {
+            background: var(--bg-card); color: var(--text-secondary);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 6px 11px; cursor: pointer; font-size: 0.82rem;
+            transition: 0.15s; white-space: nowrap;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .btn:hover { background: #1a1a32; border-color: var(--accent); color: #fff; }
+        .btn:active { transform: scale(0.96); }
+        .btn.active { background: rgba(74,158,255,0.15); border-color: var(--accent); color: var(--accent); }
+        .btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+        .select-wrap { display: flex; align-items: center; gap: 6px; }
+        .select-wrap label { color: var(--text-secondary); font-size: 0.78rem; white-space: nowrap; }
+        .select-wrap select, .select-wrap input[type=range] {
+            background: var(--bg-card); color: var(--text-primary);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 4px 8px; font-size: 0.82rem; cursor: pointer; outline: none;
+        }
+        .val-badge { color: var(--accent); font-size: 0.8rem; min-width: 36px; }
+
+        #map {
+            position: fixed;
+            top: var(--header-h); left: 0; right: 0;
+            bottom: var(--timeline-h);
+        }
+        #map.inspect-mode { cursor: crosshair !important; }
+
+        #timeline {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: var(--timeline-h);
+            background: rgba(13,13,26,0.97);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center;
+            padding: 0 14px; gap: 8px; z-index: 2000;
+        }
+        .tl-btn {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); color: var(--text-secondary);
+            padding: 7px 12px; cursor: pointer; font-size: 0.82rem;
+            transition: 0.15s; white-space: nowrap;
+        }
+        .tl-btn:hover { background: #1a1a32; border-color: var(--accent); color: #fff; }
+        .tl-btn:active { transform: scale(0.96); }
+        .tl-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+        #play-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--accent-dim); border: 2px solid var(--accent);
+            color: #fff; font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.15s; flex-shrink: 0;
+        }
+        #play-btn:hover { background: var(--accent); transform: scale(1.08); }
+        #play-btn.playing { background: #aa3322; border-color: #ff5544; }
+
+        #timeline-track {
+            flex: 1; position: relative; height: 36px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; cursor: pointer;
+        }
+        #timeline-fill {
+            position: absolute; top: 0; left: 0; height: 100%;
+            background: linear-gradient(90deg, #1a3a6a, var(--accent));
+            pointer-events: none; opacity: 0.5; transition: width 0.2s;
+        }
+        #timeline-thumb {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 4px; height: 28px; background: var(--accent);
+            border-radius: 2px; pointer-events: none;
+            box-shadow: 0 0 8px var(--accent); transition: left 0.2s;
+        }
+        .tl-labels {
+            position: absolute; bottom: 2px; left: 0; right: 0;
+            display: flex; justify-content: space-between;
+            padding: 0 4px; pointer-events: none;
+        }
+        .tl-labels span { font-size: 0.6rem; color: var(--text-muted); }
+
+        #speed-badge {
+            font-size: 0.75rem; color: var(--accent);
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px; padding: 3px 8px;
+            cursor: pointer; transition: 0.15s;
+        }
+        #speed-badge:hover { border-color: var(--accent); color: #fff; }
+
+        .panel {
+            position: absolute;
+            background: rgba(10,10,20,0.93);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            z-index: 1500; padding: 10px 13px;
+        }
+
+        #legend-wrap {
+            bottom: calc(var(--timeline-h) + 12px); right: 12px;
+            max-height: calc(100vh - var(--header-h) - var(--timeline-h) - 30px);
+            overflow-y: auto; min-width: 160px;
+        }
+        #legend-wrap::-webkit-scrollbar { width: 4px; }
+        #legend-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .legend-block h4 {
+            font-size: 0.68rem; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 7px; text-align: center;
+        }
+        .leg-group-hdr {
+            font-size: 0.62rem; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin: 8px 0 3px; padding-top: 6px;
+            border-top: 1px solid var(--border);
+        }
+        .leg-group-hdr:first-child { margin-top: 0; border-top: none; }
+        .leg-item {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 3px; font-size: 0.71rem;
+        }
+        .leg-swatch {
+            width: 24px; height: 11px; border-radius: 2px;
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .leg-label { color: var(--text-secondary); line-height: 1.2; }
+        .leg-range { color: var(--text-muted); font-size: 0.65rem; margin-left: auto; }
+
+        #status {
+            bottom: calc(var(--timeline-h) + 12px); left: 12px;
+            font-size: 0.72rem; color: var(--text-secondary);
+            max-width: 270px; line-height: 1.7;
+        }
+        .dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 5px; background: var(--success);
+        }
+        .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+
+        #inspect-badge {
+            top: calc(var(--header-h) + 10px); left: 50%; transform: translateX(-50%);
+            font-size: 0.78rem; white-space: nowrap; color: var(--accent);
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            background: rgba(74,158,255,0.1); border-color: var(--accent);
+            border-radius: 20px;
+        }
+        #inspect-badge.visible { opacity: 1; }
+
+        #zoom-hint {
+            top: calc(var(--header-h) + 10px); right: 12px;
+            font-size: 0.7rem; color: var(--text-muted);
+            pointer-events: none; opacity: 0; transition: opacity 0.5s;
+        }
+
+        /* Pixel popup */
+        #pixel-popup {
+            position: fixed; z-index: 3500;
+            background: rgba(8,8,20,0.97);
+            border: 1px solid var(--accent);
+            border-radius: 14px; padding: 14px 17px;
+            min-width: 240px; max-width: 300px;
+            pointer-events: none;
+            opacity: 0; transform: scale(0.92) translateY(-4px);
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 6px 28px rgba(74,158,255,0.2);
+        }
+        #pixel-popup.visible {
+            opacity: 1; transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        #pp-close {
+            position: absolute; top: 9px; right: 13px;
+            font-size: 1rem; color: var(--text-muted);
+            cursor: pointer; line-height: 1;
+        }
+        #pp-close:hover { color: #fff; }
+        #pixel-popup h3 {
+            font-size: 0.82rem; color: var(--accent);
+            margin-bottom: 11px; font-weight: 600;
+        }
+        .pp-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 8px;
+        }
+        .pp-swatch {
+            width: 22px; height: 22px; border-radius: 5px;
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15);
+        }
+        .pp-name { color: var(--text-primary); font-weight: 500; font-size: 0.82rem; }
+        .pp-val  { color: var(--text-secondary); font-size: 0.73rem; margin-top: 2px; }
+        .pp-coords {
+            margin-top: 10px; padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 0.68rem; color: var(--text-muted);
+        }
+        #pp-empty { color: var(--text-muted); font-size: 0.77rem; padding: 4px 0; }
+
+        #toast {
+            position: fixed; bottom: calc(var(--timeline-h) + 80px);
+            left: 50%; transform: translateX(-50%);
+            background: rgba(74,158,255,0.13); border: 1px solid var(--accent);
+            color: var(--accent); border-radius: 20px;
+            padding: 7px 18px; font-size: 0.8rem;
+            z-index: 4000; pointer-events: none;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        #toast.show { opacity: 1; }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .leaflet-container { background: #060610 !important; }
+        .leaflet-control-zoom a {
+            background: var(--bg-card) !important;
+            color: var(--text-secondary) !important;
+            border-color: var(--border) !important;
+        }
+        .leaflet-control-zoom a:hover { background: #1a1a32 !important; color: #fff !important; }
+        .leaflet-control-attribution {
+            background: rgba(8,8,16,0.85) !important;
+            color: var(--text-muted) !important; font-size: 0.58rem;
+        }
+        .leaflet-control-attribution a { color: #666 !important; }
+
+        @media (max-width:700px) {
+            :root { --header-h:104px; --timeline-h:56px; }
+            #header { flex-wrap:wrap; height:var(--header-h); padding:6px 10px; gap:6px; align-content:center; }
+            .select-wrap label { display:none; }
+            #legend-wrap { display:none; }
+            .tl-btn { padding:6px 8px; font-size:0.76rem; }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌧️ RainRadar <span style="color:#666;font-size:0.8rem;">пиксельный dBZ</span></h1>
-        <div class="controls">
-            <span id="timestampDisplay">⏱ загрузка...</span>
-            <button id="btnPrev30">◀ -30м</button>
-            <button id="btnPrev10">-10м</button>
-            <button id="btnNow">📡 Сейчас</button>
-            <button id="btnNext10">+10м</button>
-            <button id="btnNext30">+30м ▶</button>
-            <div class="pixel-control">
-                <label>Пиксель:</label>
-                <select id="pixelSize">
-                    <option value="1">1×1</option>
-                    <option value="2" selected>2×2</option>
-                    <option value="3">3×3</option>
-                    <option value="4">4×4</option>
-                    <option value="6">6×6</option>
-                    <option value="8">8×8</option>
-                </select>
-            </div>
-            <div class="pixel-control">
-                <label>Ярк:</label>
-                <input type="range" id="opacitySlider" min="0" max="100" value="100" step="5">
-                <span id="opacityValue">100%</span>
-            </div>
-        </div>
+
+<div id="header">
+    <div class="logo">🌧️ RainRadar <span>Pro</span></div>
+    <div id="timestamp-pill">⏱ загрузка...</div>
+
+    <div id="layer-switcher">
+        <button class="layer-btn active-radar" id="btn-layer-radar">🌧 Осадки (дБЗ)</button>
+        <button class="layer-btn" id="btn-layer-wx">⛈ Явления</button>
     </div>
 
-    <div id="map"></div>
-    <div class="status-bar" id="statusText">🟡 Загрузка...</div>
-    <div class="legend" id="legendContainer"></div>
+    <div class="spacer"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-    (function() {
-        const RADAR_DELAY = 600;
-        const MAX_NATIVE_ZOOM = 5;
-        const MAX_DISPLAY_ZOOM = 10;
+    <div class="select-wrap">
+        <label>Пиксель</label>
+        <select id="sel-pixel">
+            <option value="1">1×1</option>
+            <option value="2" selected>2×2</option>
+            <option value="3">3×3</option>
+            <option value="4">4×4</option>
+            <option value="6">6×6</option>
+            <option value="8">8×8</option>
+        </select>
+    </div>
 
-        const defaultLat = 58.141;
-        const defaultLon = 60.866;
-        const defaultZoom = 5;
+    <div class="select-wrap">
+        <label>Яркость</label>
+        <input type="range" id="sl-opacity" min="20" max="100" value="85" step="5">
+        <span class="val-badge" id="opacity-val">85%</span>
+    </div>
 
-        let currentTimestamp;
-        let currentPixelSize = 2;
-        let currentOpacity = 1.0;
+    <button class="btn" id="btn-inspect">🔍 Инспектор</button>
+    <button class="btn" id="btn-locate">📍 Геолокация</button>
+    <button class="btn" id="btn-reset">🗺 Сбросить</button>
+</div>
 
-        function getLatestRadarTimestamp() {
-            const now = Math.floor(Date.now() / 1000);
-            return Math.floor((now - RADAR_DELAY) / 600) * 600;
+<div id="map"></div>
+
+<div class="panel" id="legend-wrap">
+    <div id="legend-content"></div>
+</div>
+
+<div class="panel" id="status">
+    <span class="dot loading" id="status-dot"></span>
+    <span id="status-text">Загрузка...</span>
+</div>
+
+<div class="panel" id="inspect-badge">🔍 Кликните по карте — узнайте интенсивность</div>
+<div class="panel" id="zoom-hint"></div>
+
+<div id="pixel-popup">
+    <span id="pp-close">✕</span>
+    <h3 id="pp-title">📊 Интенсивность</h3>
+    <div id="pp-main-row" class="pp-row">
+        <div class="pp-swatch" id="pp-swatch"></div>
+        <div>
+            <div class="pp-name" id="pp-name">—</div>
+            <div class="pp-val"  id="pp-val">—</div>
+        </div>
+    </div>
+    <div id="pp-empty" style="display:none">Нет данных в этой точке</div>
+    <div class="pp-coords" id="pp-coords"></div>
+</div>
+
+<div id="toast"></div>
+
+<div id="timeline">
+    <button class="tl-btn" id="btn-p60">◀◀ −1ч</button>
+    <button class="tl-btn" id="btn-p30">◀ −30м</button>
+    <button class="tl-btn" id="btn-p10">−10м</button>
+    <button id="play-btn">▶</button>
+    <button class="tl-btn" id="btn-n10">+10м</button>
+    <button class="tl-btn" id="btn-n30">+30м ▶</button>
+    <button class="tl-btn primary" id="btn-now">📡 Сейчас</button>
+    <div id="timeline-track">
+        <div id="timeline-fill"></div>
+        <div id="timeline-thumb"></div>
+        <div class="tl-labels" id="tl-labels"></div>
+    </div>
+    <span id="speed-badge">🎞 1×</span>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ════════════════════════════════════════════
+    //  CONFIG
+    // ════════════════════════════════════════════
+    const CFG = {
+        radarDelay:     600,
+        maxNativeZoom:  5,
+        maxDisplayZoom: 10,
+        defaultCenter:  [58.141, 60.866],
+        defaultZoom:    5,
+        dbzBoost:       5,
+        minDbz:         5,
+        tileBase:       'https://rainradar.ru/composite',
+        timelineHours:  3,
+        animSpeeds:     [1, 2, 4],
+        animFrameMs:    900,
+        cacheMax:       150,
+    };
+
+    // ════════════════════════════════════════════
+    //  РАДАРНАЯ ПАЛИТРА (дБЗ → цвет)
+    // ════════════════════════════════════════════
+    const RADAR_PALETTE = [
+        { v:80, rgb:[0,  0,  0  ], label:'≥80 дБЗ', desc:'Экстремальные' },
+        { v:75, rgb:[80, 40, 10 ], label:'75 дБЗ',  desc:'Очень сильные' },
+        { v:65, rgb:[139,69, 19 ], label:'65 дБЗ',  desc:'Сильные'       },
+        { v:55, rgb:[180,0,  0  ], label:'55 дБЗ',  desc:'Интенсивные'   },
+        { v:50, rgb:[255,0,  0  ], label:'50 дБЗ',  desc:'Сильный ливень'},
+        { v:45, rgb:[255,100,0  ], label:'45 дБЗ',  desc:'Ливень'        },
+        { v:40, rgb:[255,165,0  ], label:'40 дБЗ',  desc:'Умеренный'     },
+        { v:30, rgb:[251,255,3  ], label:'30 дБЗ',  desc:'Слабый ливень' },
+        { v:25, rgb:[3,  57, 255], label:'25 дБЗ',  desc:'Слабый'        },
+        { v:20, rgb:[3,  209,255], label:'20 дБЗ',  desc:'Очень слабый'  },
+        { v:15, rgb:[0,  200,0  ], label:'15 дБЗ',  desc:'Морось'        },
+        { v:10, rgb:[0,  255,100], label:'10 дБЗ',  desc:'Туман/морось'  },
+        { v:6,  rgb:[153,255,51 ], label:'6 дБЗ',   desc:'Едва заметно'  },
+    ];
+
+    function dbzToRadarEntry(dbz) {
+        if (dbz < CFG.minDbz) return null;
+        for (const p of RADAR_PALETTE) if (dbz >= p.v) return p;
+        return null;
+    }
+
+    // ════════════════════════════════════════════
+    //  ПАЛИТРА ЯВЛЕНИЙ (дБЗ → явление)
+    //
+    //  Та же исходная яркость пикселя = дБЗ,
+    //  но раскрашиваем по шкале явлений:
+    //
+    //  6–14   → осадки слабые
+    //  15–24  → осадки умеренные
+    //  25–34  → осадки сильные
+    //  35–39  → ливень слабый
+    //  40–44  → ливень умеренный
+    //  45–49  → ливень сильный
+    //  50–54  → гроза 30%
+    //  55–59  → гроза 50-70%
+    //  60–64  → гроза 70-100%
+    //  65–67  → град слабый
+    //  68–71  → град умеренный
+    //  72–75  → град сильный
+    //  76–78  → шквал слабый
+    //  79–79  → шквал умеренный
+    //  80+    → шквал сильный
+    // ════════════════════════════════════════════
+    const WX_PALETTE = [
+        // Осадки
+        {
+            id:'rain_w', group:'Осадки',
+            label:'Осадки слабые',   emoji:'🌦',
+            rgb:[140, 255, 138],        // светло-зелёный
+            minDbz:6,  maxDbz:14,
+        },
+        {
+            id:'rain_m', group:'Осадки',
+            label:'Осадки умеренные', emoji:'🌧',
+            rgb:[4, 255, 0],        // зелёный
+            minDbz:15, maxDbz:24,
+        },
+        {
+            id:'rain_h', group:'Осадки',
+            label:'Осадки сильные',   emoji:'🌧',
+            rgb:[7, 156, 5],        // тёмно-зелёный
+            minDbz:25, maxDbz:34,
+        },
+        // Ливень
+        {
+            id:'shower_w', group:'Ливень',
+            label:'Ливень слабый',    emoji:'🌦',
+            rgb:[117, 188, 255],        // светло-синий
+            minDbz:35, maxDbz:39,
+        },
+        {
+            id:'shower_m', group:'Ливень',
+            label:'Ливень умеренный', emoji:'🌧',
+            rgb:[0, 125, 242],        // синий
+            minDbz:40, maxDbz:44,
+        },
+        {
+            id:'shower_h', group:'Ливень',
+            label:'Ливень сильный',   emoji:'⛈',
+            rgb:[0, 75, 145],        // тёмно-синий
+            minDbz:45, maxDbz:49,
+        },
+        // Гроза
+        {
+            id:'storm_30', group:'Гроза',
+            label:'Гроза ~30%',       emoji:'⛈',
+            rgb:[255, 238, 176],        // бежевый
+            minDbz:50, maxDbz:54,
+        },
+        {
+            id:'storm_50', group:'Гроза',
+            label:'Гроза 50–70%',     emoji:'⛈',
+            rgb:[255, 131, 122, 1],        // розово-красный
+            minDbz:55, maxDbz:59,
+        },
+        {
+            id:'storm_70', group:'Гроза',
+            label:'Гроза 70–100%',    emoji:'🌩',
+            rgb:[255, 0, 0, 1],        // красный
+            minDbz:60, maxDbz:64,
+        },
+        // Град
+        {
+            id:'hail_w', group:'Град',
+            label:'Град слабый',      emoji:'🌨',
+            rgb:[255, 153, 0, 1],        // светло-коричневый (tan)
+            minDbz:65, maxDbz:67,
+        },
+        {
+            id:'hail_m', group:'Град',
+            label:'Град умеренный',   emoji:'🌨',
+            rgb:[184, 110, 0, 1],        // коричневый
+            minDbz:68, maxDbz:71,
+        },
+        {
+            id:'hail_h', group:'Град',
+            label:'Град сильный',     emoji:'🌨',
+            rgb:[105, 63, 1, 1],        // тёмно-коричневый
+            minDbz:72, maxDbz:75,
+        },
+        // Шквал
+        {
+            id:'squall_w', group:'Шквал',
+            label:'Шквал слабый',     emoji:'💨',
+            rgb:[255, 127, 234, 1],        // светло-фиолетовый
+            minDbz:76, maxDbz:77,
+        },
+        {
+            id:'squall_m', group:'Шквал',
+            label:'Шквал умеренный',  emoji:'💨',
+            rgb:[255, 0, 213, 1],        // пурпурный
+            minDbz:78, maxDbz:79,
+        },
+        {
+            id:'squall_h', group:'Шквал',
+            label:'Шквал сильный',    emoji:'🌪',
+            rgb:[153, 0, 127, 1],        // тёмно-фиолетовый
+            minDbz:80, maxDbz:999,
+        },
+    ];
+
+    // Получить явление по дБЗ
+    function dbzToWxEntry(dbz) {
+        if (dbz < CFG.minDbz) return null;
+        for (const p of WX_PALETTE) {
+            if (dbz >= p.minDbz && dbz <= p.maxDbz) return p;
         }
-        currentTimestamp = getLatestRadarTimestamp();
+        return null;
+    }
 
-        const map = L.map('map', {
-            center: [defaultLat, defaultLon],
-            zoom: defaultZoom,
-            maxZoom: MAX_DISPLAY_ZOOM,
-            zoomControl: true
-        });
+    // Обратный поиск — по RGB найти запись WX (для инспектора)
+    function rgbToWxEntry(r, g, b) {
+        let best = null, bd = Infinity;
+        for (const p of WX_PALETTE) {
+            const d = Math.sqrt((r-p.rgb[0])**2+(g-p.rgb[1])**2+(b-p.rgb[2])**2);
+            if (d < bd) { bd = d; best = p; }
+        }
+        return bd <= 50 ? best : null;
+    }
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© <a href="https://carto.com/">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: MAX_DISPLAY_ZOOM
-        }).addTo(map);
+    // Обратный поиск — по RGB найти запись Radar (для инспектора)
+    function rgbToRadarEntry(r, g, b) {
+        let best = null, bd = Infinity;
+        for (const p of RADAR_PALETTE) {
+            const d = Math.sqrt((r-p.rgb[0])**2+(g-p.rgb[1])**2+(b-p.rgb[2])**2);
+            if (d < bd) { bd = d; best = p; }
+        }
+        return bd <= 60 ? best : null;
+    }
 
-        // ---------- НОВАЯ ПАЛИТРА (по запросу) ----------
-        const radarPalette = [
-            { value: 80, color: [0, 0, 0] },               // чёрный
-            { value: 75, color: [80, 40, 10] },            // тёмно-коричневый
-            { value: 65, color: [139, 69, 19] },           // коричневый
-            { value: 55, color: [180, 0, 0] },             // тёмно-красный
-            { value: 50, color: [255, 0, 0] },             // красный
-            { value: 45, color: [255, 100, 0] },           // тёмно-оранжевый
-            { value: 40, color: [255, 165, 0] },           // оранжевый
-            { value: 25, color: [255, 255, 0] },           // жёлтый (25 dBZ, без светло-жёлтого)
-            { value: 20, color: [0, 128, 0] },             // тёмно-зелёный
-            { value: 15, color: [0, 200, 0] },             // зелёный
-            { value: 10, color: [0, 255, 100] },           // светло-зелёный
-            { value: 5,  color: [153, 255, 51] }           // салатовый
-        ];
+    // ════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════
+    const state = {
+        timestamp:   0,
+        pixelSize:   2,
+        opacity:     0.85,
+        activeLayer: 'radar',   // 'radar' | 'wx'
+        inspectMode: false,
+        playing:     false,
+        speedIdx:    0,
+        animTimer:   null,
+        animFrame:   0,
+        animFrames:  [],
+        tileCache:   new Map(),
+        loadingTiles:0,
+    };
 
-        function getRadarColor(intensity) {
-            if (intensity < 5) return null;
-            for (let i = 0; i < radarPalette.length; i++) {
-                if (intensity >= radarPalette[i].value) {
-                    return radarPalette[i].color;
-                }
+    function nowTs() {
+        return Math.floor((Date.now()/1000 - CFG.radarDelay) / 600) * 600;
+    }
+    state.timestamp = nowTs();
+
+    // ════════════════════════════════════════════
+    //  MAP
+    // ════════════════════════════════════════════
+    const map = L.map('map', {
+        center: CFG.defaultCenter, zoom: CFG.defaultZoom,
+        maxZoom: CFG.maxDisplayZoom, zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd', maxZoom: CFG.maxDisplayZoom,
+    }).addTo(map);
+
+    // ════════════════════════════════════════════
+    //  TILE CACHE
+    // ════════════════════════════════════════════
+    function cKey(type, ts, z, x, y) { return `${type}|${ts}|${z}|${x}|${y}`; }
+    function cGet(k) { return state.tileCache.get(k) || null; }
+    function cSet(k, cv) {
+        if (state.tileCache.size >= CFG.cacheMax)
+            state.tileCache.delete(state.tileCache.keys().next().value);
+        state.tileCache.set(k, cv);
+    }
+
+    // ════════════════════════════════════════════
+    //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // ════════════════════════════════════════════
+    function mkCanvas(w, h) {
+        const c = document.createElement('canvas');
+        c.width = w || 256; c.height = h || 256;
+        return c;
+    }
+
+    function pixelate(src, sz) {
+        if (sz <= 1) return src;
+        const sw = src.width, sh = src.height;
+        const bw = Math.ceil(sw/sz), bh = Math.ceil(sh/sz);
+        const sm = mkCanvas(bw, bh);
+        const sc = sm.getContext('2d');
+        const sd = src.getContext('2d').getImageData(0,0,sw,sh).data;
+
+        for (let py=0;py<bh;py++) for (let px=0;px<bw;px++) {
+            let r=0,g=0,b=0,a=0,n=0;
+            const x0=px*sz, y0=py*sz;
+            const x1=Math.min(x0+sz,sw), y1=Math.min(y0+sz,sh);
+            for (let y=y0;y<y1;y++) for (let x=x0;x<x1;x++) {
+                const i=(y*sw+x)*4;
+                if (sd[i+3]>0){r+=sd[i];g+=sd[i+1];b+=sd[i+2];a+=sd[i+3];n++;}
             }
-            return null;
+            if (n>0){
+                sc.fillStyle=`rgba(${r/n|0},${g/n|0},${b/n|0},${a/n/255})`;
+                sc.fillRect(px,py,1,1);
+            }
         }
 
-        // Динамическая легенда
-        function buildLegend() {
-            const legendDiv = document.getElementById('legendContainer');
-            legendDiv.innerHTML = '';
-            const ascending = [...radarPalette].reverse();
-            ascending.forEach(item => {
-                const [r,g,b] = item.color;
-                const div = document.createElement('div');
-                div.className = 'legend-item';
-                div.innerHTML = `<span class="dot" style="background:rgb(${r},${g},${b});"></span> ${item.value} дБЗ`;
-                legendDiv.appendChild(div);
-            });
-        }
-        buildLegend();
+        const out = mkCanvas(sw, sh);
+        const oc = out.getContext('2d');
+        oc.imageSmoothingEnabled = false;
+        oc.drawImage(sm, 0, 0, sw, sh);
+        return out;
+    }
 
-        // Пикселизация (без сглаживания, работает в Safari)
-        function pixelateAndScale(sourceCanvas, pixelSize, scale) {
-            const srcW = sourceCanvas.width;
-            const srcH = sourceCanvas.height;
-            const smallW = Math.ceil(srcW / pixelSize);
-            const smallH = Math.ceil(srcH / pixelSize);
-            const smallCanvas = document.createElement('canvas');
-            smallCanvas.width = smallW;
-            smallCanvas.height = smallH;
-            const smallCtx = smallCanvas.getContext('2d');
+    // ════════════════════════════════════════════
+    //  ОБРАБОТКА ИЗОБРАЖЕНИЯ ТАЙЛА
+    //  Единая функция — принимает img, mode
+    //  Читает исходную яркость → дБЗ → цвет
+    // ════════════════════════════════════════════
+    function processTile(img, mode) {
+        const c = mkCanvas();
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
 
-            const srcCtx = sourceCanvas.getContext('2d');
-            const imgData = srcCtx.getImageData(0, 0, srcW, srcH);
-            const data = imgData.data;
+        const id = ctx.getImageData(0, 0, 256, 256);
+        const d  = id.data;
 
-            for (let py = 0; py < smallH; py++) {
-                for (let px = 0; px < smallW; px++) {
-                    let totalR=0, totalG=0, totalB=0, totalA=0, count=0;
-                    const startX = px * pixelSize;
-                    const startY = py * pixelSize;
-                    const endX = Math.min(startX + pixelSize, srcW);
-                    const endY = Math.min(startY + pixelSize, srcH);
-                    for (let y = startY; y < endY; y++) {
-                        for (let x = startX; x < endX; x++) {
-                            const idx = (y * srcW + x) * 4;
-                            if (data[idx+3] > 0) {
-                                totalR += data[idx];
-                                totalG += data[idx+1];
-                                totalB += data[idx+2];
-                                totalA += data[idx+3];
-                                count++;
-                            }
-                        }
-                    }
-                    if (count > 0) {
-                        smallCtx.fillStyle = `rgba(${Math.round(totalR/count)},${Math.round(totalG/count)},${Math.round(totalB/count)},${Math.round(totalA/count)/255})`;
-                    } else {
-                        smallCtx.fillStyle = 'rgba(0,0,0,0)';
-                    }
-                    smallCtx.fillRect(px, py, 1, 1);
-                }
+        for (let i = 0; i < d.length; i += 4) {
+            // Прозрачный пиксель — пропускаем
+            if (d[i+3] === 0) continue;
+
+            // Исходная яркость тайла = dBZ (среднее по каналам)
+            const raw = (d[i] + d[i+1] + d[i+2]) / 3 | 0;
+
+            // Применяем boost чувствительности
+            const dbz = Math.min(80, raw + CFG.dbzBoost);
+
+            let rgb = null;
+
+            if (mode === 'radar') {
+                const entry = dbzToRadarEntry(dbz);
+                if (entry) rgb = entry.rgb;
+            } else {
+                // wx — та же яркость тайла, другая палитра
+                const entry = dbzToWxEntry(dbz);
+                if (entry) rgb = entry.rgb;
             }
 
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = smallW * scale;
-            finalCanvas.height = smallH * scale;
-            const finalCtx = finalCanvas.getContext('2d');
-            finalCtx.imageSmoothingEnabled = false;
-            finalCtx.webkitImageSmoothingEnabled = false;
-            finalCtx.mozImageSmoothingEnabled = false;
-            finalCtx.drawImage(smallCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-            return finalCanvas;
+            if (rgb) {
+                d[i]   = rgb[0];
+                d[i+1] = rgb[1];
+                d[i+2] = rgb[2];
+                d[i+3] = 215;
+            } else {
+                d[i+3] = 0; // ниже порога — прозрачно
+            }
         }
 
-        const RadarCanvasLayer = L.TileLayer.extend({
-            createTile: function(coords, done) {
-                const tile = document.createElement('canvas');
-                tile.width = 256;
-                tile.height = 256;
-                tile.style.imageRendering = 'pixelated';
-                tile.style.imageRendering = 'crisp-edges';
-                tile.style.setProperty('image-rendering', 'pixelated', 'important');
-                tile.style.setProperty('image-rendering', 'crisp-edges', 'important');
+        ctx.putImageData(id, 0, 0);
+        return c;
+    }
 
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                const url = `https://rainradar.ru/composite/${currentTimestamp}/${coords.z}/${coords.x}_${coords.y}.png`;
+    // ════════════════════════════════════════════
+    //  CANVAS TILE LAYER
+    //  Один слой — рисует radar или wx
+    //  в зависимости от state.activeLayer
+    // ════════════════════════════════════════════
+    const DataLayer = L.TileLayer.extend({
+        createTile(coords, done) {
+            const tile = mkCanvas();
+            tile.style.imageRendering = 'pixelated';
 
-                img.onload = function() {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 256;
-                    tempCanvas.height = 256;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.drawImage(img, 0, 0);
+            const mode = state.activeLayer;
+            const k = cKey(mode, state.timestamp, coords.z, coords.x, coords.y);
 
-                    const imageData = tempCtx.getImageData(0, 0, 256, 256);
-                    const pixels = imageData.data;
-
-                    for (let i = 0; i < pixels.length; i += 4) {
-                        const intensity = Math.round((pixels[i] + pixels[i+1] + pixels[i+2]) / 3);
-                        const alpha = pixels[i+3];
-                        if (intensity >= 5 && alpha > 0) {
-                            const color = getRadarColor(intensity);
-                            if (color) {
-                                pixels[i] = color[0];
-                                pixels[i+1] = color[1];
-                                pixels[i+2] = color[2];
-                                pixels[i+3] = 210;
-                            }
-                        } else {
-                            pixels[i+3] = 0;
-                        }
-                    }
-                    tempCtx.putImageData(imageData, 0, 0);
-
-                    const finalCtx = tile.getContext('2d');
-                    finalCtx.imageSmoothingEnabled = false;
-                    finalCtx.webkitImageSmoothingEnabled = false;
-                    finalCtx.mozImageSmoothingEnabled = false;
-
-                    if (currentPixelSize > 1) {
-                        const scale = Math.max(1, Math.pow(2, coords.z - MAX_NATIVE_ZOOM));
-                        const pixCanvas = pixelateAndScale(tempCanvas, currentPixelSize, scale);
-                        finalCtx.drawImage(pixCanvas, 0, 0, 256, 256);
-                    } else {
-                        finalCtx.drawImage(tempCanvas, 0, 0);
-                    }
-
-                    done(null, tile);
-                };
-
-                img.onerror = function() {
-                    done(null, tile);
-                };
-
-                img.src = url;
+            const cached = cGet(k);
+            if (cached) {
+                tile.getContext('2d').drawImage(cached, 0, 0);
+                done(null, tile);
                 return tile;
             }
-        });
 
-        const radarLayer = new RadarCanvasLayer('', {
-            minZoom: 3,
-            maxNativeZoom: MAX_NATIVE_ZOOM,
-            maxZoom: MAX_DISPLAY_ZOOM,
-            tileSize: 256,
-            bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0])
-        }).addTo(map);
+            state.loadingTiles++;
+            updateStatus();
 
-        const labelsLayer = L.tileLayer('', {
-            opacity: 0.8,
-            minZoom: 3,
-            maxNativeZoom: MAX_NATIVE_ZOOM,
-            maxZoom: MAX_DISPLAY_ZOOM,
-            tileSize: 256,
-            bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0]),
-            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-        }).addTo(map);
+            // Оба режима берут тайлы с ОДНОГО источника!
+            const url = `${CFG.tileBase}/${state.timestamp}/${coords.z}/${coords.x}_${coords.y}.png`;
 
-        function updateAllLayers() {
-            labelsLayer.setUrl(`https://rainradar.ru/labels?z={z}&x={x}&y={y}`);
-            labelsLayer.redraw();
-            radarLayer.redraw();
-            updateDisplay();
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+
+            img.onload = () => {
+                state.loadingTiles = Math.max(0, state.loadingTiles - 1);
+
+                // Обработка + пикселизация
+                const processed = processTile(img, mode);
+                const result    = pixelate(processed, state.pixelSize);
+
+                cSet(k, result);
+                tile.getContext('2d').drawImage(result, 0, 0);
+                done(null, tile);
+                updateStatus();
+            };
+
+            img.onerror = () => {
+                state.loadingTiles = Math.max(0, state.loadingTiles - 1);
+                done(null, tile);
+                updateStatus();
+            };
+
+            img.src = url;
+            return tile;
+        }
+    });
+
+    const dataLayer = new DataLayer('', {
+        minZoom: 3,
+        maxNativeZoom: CFG.maxNativeZoom,
+        maxZoom: CFG.maxDisplayZoom,
+        tileSize: 256,
+        opacity: state.opacity,
+        bounds: L.latLngBounds([30,10],[80,90]),
+        keepBuffer: 3,
+    }).addTo(map);
+
+    // ════════════════════════════════════════════
+    //  ПЕРЕКЛЮЧЕНИЕ СЛОЯ
+    // ════════════════════════════════════════════
+    function switchLayer(mode) {
+        if (state.activeLayer === mode) return;
+        state.activeLayer = mode;
+
+        // Кеш не чистим! Тайлы radar и wx кешируются РАЗДЕЛЬНО по ключу с mode
+        // (разные цвета для одних и тех же координат)
+
+        document.getElementById('btn-layer-radar').className =
+            'layer-btn' + (mode === 'radar' ? ' active-radar' : '');
+        document.getElementById('btn-layer-wx').className =
+            'layer-btn' + (mode === 'wx' ? ' active-wx' : '');
+
+        buildLegend();
+        dataLayer.redraw();
+        updateStatus();
+        hidePopup();
+    }
+
+    document.getElementById('btn-layer-radar').addEventListener('click', () => switchLayer('radar'));
+    document.getElementById('btn-layer-wx').addEventListener('click',    () => switchLayer('wx'));
+
+    // ════════════════════════════════════════════
+    //  ЛЕГЕНДА
+    // ════════════════════════════════════════════
+    function buildLegend() {
+        const el = document.getElementById('legend-content');
+        el.innerHTML = '';
+
+        if (state.activeLayer === 'radar') {
+            el.innerHTML = '<h4>🌧 Радар — дБЗ</h4>';
+            [...RADAR_PALETTE].reverse().forEach(p => {
+                const [r,g,b] = p.rgb;
+                el.innerHTML += `
+                    <div class="leg-item">
+                        <span class="leg-swatch" style="background:rgb(${r},${g},${b})"></span>
+                        <span class="leg-label">${p.label}</span>
+                        <span class="leg-range">${p.desc}</span>
+                    </div>`;
+            });
+
+        } else {
+            el.innerHTML = '<h4>⛈ Явления</h4>';
+
+            // Группируем
+            const groups = {};
+            WX_PALETTE.forEach(p => (groups[p.group] = groups[p.group]||[]).push(p));
+
+            Object.entries(groups).forEach(([name, items]) => {
+                el.innerHTML += `<div class="leg-group-hdr">${name}</div>`;
+                items.forEach(p => {
+                    const [r,g,b] = p.rgb;
+                    el.innerHTML += `
+                        <div class="leg-item">
+                            <span class="leg-swatch" style="background:rgb(${r},${g},${b})"></span>
+                            <span class="leg-label">${p.emoji} ${p.label}</span>
+                            <span class="leg-range">${p.minDbz}–${p.maxDbz===999?'∞':p.maxDbz}</span>
+                        </div>`;
+                });
+            });
+        }
+    }
+    buildLegend();
+
+    // ════════════════════════════════════════════
+    //  TIMELINE
+    // ════════════════════════════════════════════
+    function buildFrames() {
+        const latest = nowTs(), oldest = latest - CFG.timelineHours * 3600;
+        const f = [];
+        for (let t = oldest; t <= latest; t += 600) f.push(t);
+        state.animFrames = f;
+    }
+    function buildLabels() {
+        const el = document.getElementById('tl-labels');
+        el.innerHTML = '';
+        const f = state.animFrames, N = 7;
+        for (let i=0;i<N;i++) {
+            const ts = f[Math.round(i/(N-1)*(f.length-1))];
+            const s = document.createElement('span');
+            s.textContent = new Date(ts*1000).toLocaleTimeString('ru-RU',
+                {hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'});
+            el.appendChild(s);
+        }
+    }
+    function updateThumb() {
+        const f = state.animFrames; if (!f.length) return;
+        const pct = Math.max(0, Math.min(1,
+            (state.timestamp - f[0]) / (f[f.length-1] - f[0])
+        ));
+        document.getElementById('timeline-fill').style.width = (pct*100)+'%';
+        document.getElementById('timeline-thumb').style.left = `calc(${pct*100}% - 2px)`;
+    }
+    function initTimeline() { buildFrames(); buildLabels(); updateThumb(); }
+
+    function trackToTs(cx) {
+        const r = document.getElementById('timeline-track').getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (cx-r.left)/r.width));
+        const f = state.animFrames;
+        return f[Math.round(pct*(f.length-1))] || state.timestamp;
+    }
+
+    let dragging = false;
+    document.getElementById('timeline-track').addEventListener('pointerdown', e => {
+        dragging = true;
+        state.timestamp = trackToTs(e.clientX);
+        refreshData(true);
+        e.currentTarget.setPointerCapture(e.pointerId);
+    });
+    document.getElementById('timeline-track').addEventListener('pointermove', e => {
+        if (!dragging) return;
+        state.timestamp = trackToTs(e.clientX);
+        refreshData(true);
+    });
+    document.addEventListener('pointerup', () => { dragging = false; });
+
+    // ════════════════════════════════════════════
+    //  DISPLAY
+    // ════════════════════════════════════════════
+    function fmtTs(ts) {
+        return new Date(ts*1000).toLocaleString('ru-RU', {
+            day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
+            timeZone:'Europe/Moscow',
+        }) + ' МСК';
+    }
+    function updatePill() {
+        const el = document.getElementById('timestamp-pill');
+        el.textContent = '⏱ ' + fmtTs(state.timestamp);
+        el.className = state.timestamp > nowTs() ? 'future' : '';
+    }
+    function updateStatus() {
+        const z = map.getZoom();
+        document.getElementById('status-dot').className =
+            'dot' + (state.loadingTiles > 0 ? ' loading' : '');
+        const dig = z > CFG.maxNativeZoom
+            ? ` · цифр ×${Math.pow(2, z-CFG.maxNativeZoom)}` : '';
+        const lyr = state.activeLayer === 'radar' ? '🌧 дБЗ' : '⛈ явления';
+        document.getElementById('status-text').textContent =
+            `${lyr} · зум ${z}${dig} · px ${state.pixelSize}²` +
+            ` · кеш ${state.tileCache.size}` +
+            (state.loadingTiles > 0 ? ` · ⏳ ${state.loadingTiles}` : ' · ✓');
+    }
+    function updateZoomHint() {
+        const z = map.getZoom();
+        const h = document.getElementById('zoom-hint');
+        h.style.opacity = z > CFG.maxNativeZoom ? '1' : '0';
+        h.textContent   = z > CFG.maxNativeZoom
+            ? `⚠ Цифровое ×${Math.pow(2, z-CFG.maxNativeZoom)}` : '';
+    }
+
+    // ════════════════════════════════════════════
+    //  REFRESH
+    // ════════════════════════════════════════════
+    let rThrottle = null;
+    function refreshData(throttled = false) {
+        updatePill(); updateThumb();
+        if (throttled) {
+            clearTimeout(rThrottle);
+            rThrottle = setTimeout(() => dataLayer.redraw(), 200);
+        } else {
+            dataLayer.redraw();
+        }
+    }
+
+    // ════════════════════════════════════════════
+    //  ANIMATION
+    // ════════════════════════════════════════════
+    function animMs() { return CFG.animFrameMs / CFG.animSpeeds[state.speedIdx]; }
+    function animStep() {
+        state.animFrame = (state.animFrame+1) % state.animFrames.length;
+        state.timestamp = state.animFrames[state.animFrame];
+        refreshData();
+    }
+    function startAnim() {
+        buildFrames(); state.animFrame = 0;
+        if (state.animTimer) clearInterval(state.animTimer);
+        state.animTimer = setInterval(animStep, animMs());
+        const b = document.getElementById('play-btn');
+        b.textContent='⏹'; b.classList.add('playing'); state.playing=true;
+    }
+    function stopAnim() {
+        clearInterval(state.animTimer); state.animTimer=null; state.playing=false;
+        const b = document.getElementById('play-btn');
+        b.textContent='▶'; b.classList.remove('playing');
+    }
+    document.getElementById('play-btn').addEventListener('click', () =>
+        state.playing ? stopAnim() : startAnim()
+    );
+    document.getElementById('speed-badge').addEventListener('click', () => {
+        state.speedIdx = (state.speedIdx+1) % CFG.animSpeeds.length;
+        document.getElementById('speed-badge').textContent =
+            '🎞 '+CFG.animSpeeds[state.speedIdx]+'×';
+        if (state.playing) {
+            clearInterval(state.animTimer);
+            state.animTimer = setInterval(animStep, animMs());
+        }
+        showToast('Скорость: '+CFG.animSpeeds[state.speedIdx]+'×');
+    });
+
+    // ════════════════════════════════════════════
+    //  PIXEL INSPECTOR
+    // ════════════════════════════════════════════
+    function getPixelAt(latlng) {
+        const z  = Math.min(map.getZoom(), CFG.maxNativeZoom);
+        const pt = map.project(latlng, z);
+        const tx = Math.floor(pt.x/256), ty = Math.floor(pt.y/256);
+        const px = Math.floor(pt.x - tx*256), py = Math.floor(pt.y - ty*256);
+        const k  = cKey(state.activeLayer, state.timestamp, z, tx, ty);
+        const cv = cGet(k); if (!cv) return null;
+        const p  = cv.getContext('2d').getImageData(px, py, 1, 1).data;
+        return p[3] > 10 ? {r:p[0], g:p[1], b:p[2]} : null;
+    }
+
+    function showPopup(latlng, cp) {
+        const px = getPixelAt(latlng);
+        const row   = document.getElementById('pp-main-row');
+        const empty = document.getElementById('pp-empty');
+
+        if (px) {
+            let name='', val='', rgb=null;
+
+            if (state.activeLayer === 'radar') {
+                const e = rgbToRadarEntry(px.r, px.g, px.b);
+                if (e) { name=e.desc; val=e.label; rgb=e.rgb; }
+            } else {
+                const e = rgbToWxEntry(px.r, px.g, px.b);
+                if (e) { name=e.emoji+' '+e.label; val=e.group+' · '+e.minDbz+'–'+(e.maxDbz===999?'∞':e.maxDbz)+' дБЗ'; rgb=e.rgb; }
+            }
+
+            if (rgb) {
+                document.getElementById('pp-swatch').style.background =
+                    `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+                document.getElementById('pp-name').textContent = name;
+                document.getElementById('pp-val').textContent  = val;
+                row.style.display   = 'flex';
+                empty.style.display = 'none';
+            } else {
+                row.style.display   = 'none';
+                empty.style.display = 'block';
+            }
+        } else {
+            row.style.display   = 'none';
+            empty.style.display = 'block';
         }
 
-        function formatTimestamp(ts) {
-            const d = new Date(ts * 1000);
-            return d.toLocaleString('ru-RU', {
-                day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
-                timeZone: 'Europe/Moscow'
-            }) + ' МСК';
-        }
+        document.getElementById('pp-title').textContent =
+            state.activeLayer === 'radar' ? '📊 Радар: дБЗ' : '⛈ Явление';
+        document.getElementById('pp-coords').textContent =
+            `${latlng.lat.toFixed(4)}° с.ш.   ${latlng.lng.toFixed(4)}° в.д.`;
 
-        function updateDisplay() {
-            document.getElementById('timestampDisplay').textContent =
-                '⏱ ' + formatTimestamp(currentTimestamp);
-            document.getElementById('opacityValue').textContent =
-                document.getElementById('opacitySlider').value + '%';
-            const z = map.getZoom();
-            document.getElementById('statusText').textContent =
-                '🟢 ' + formatTimestamp(currentTimestamp) +
-                ' | Зум: ' + z + ' | Пиксель: ' + currentPixelSize + '×' + currentPixelSize +
-                (z > MAX_NATIVE_ZOOM ? ' (цифровой)' : '');
-        }
+        // позиционирование
+        const mr = document.getElementById('map').getBoundingClientRect();
+        const W=260, H=160;
+        let left = cp.x + 16;
+        let top  = cp.y - 20 + mr.top;
+        if (left+W > mr.right)  left = cp.x - W - 10;
+        if (top+H  > mr.bottom) top  = cp.y - H + mr.top;
+        if (top < mr.top) top = mr.top + 4;
 
-        document.getElementById('opacitySlider').addEventListener('input', function(e) {
-            currentOpacity = parseInt(e.target.value) / 100;
-            radarLayer.setOpacity(currentOpacity);
-            updateDisplay();
-        });
+        const popup = document.getElementById('pixel-popup');
+        popup.style.left = left+'px';
+        popup.style.top  = top+'px';
+        popup.classList.add('visible');
+    }
 
-        document.getElementById('pixelSize').addEventListener('change', function(e) {
-            currentPixelSize = parseInt(e.target.value);
-            updateAllLayers();
-        });
+    function hidePopup() {
+        document.getElementById('pixel-popup').classList.remove('visible');
+    }
 
-        document.getElementById('btnPrev10').addEventListener('click', ()=> { currentTimestamp-=600; updateAllLayers(); });
-        document.getElementById('btnPrev30').addEventListener('click', ()=> { currentTimestamp-=1800; updateAllLayers(); });
-        document.getElementById('btnNext10').addEventListener('click', ()=> { currentTimestamp+=600; updateAllLayers(); });
-        document.getElementById('btnNext30').addEventListener('click', ()=> { currentTimestamp+=1800; updateAllLayers(); });
-        document.getElementById('btnNow').addEventListener('click', ()=> {
-            currentTimestamp = getLatestRadarTimestamp();
-            updateAllLayers();
-        });
+    const btnInspect = document.getElementById('btn-inspect');
+    btnInspect.addEventListener('click', () => {
+        state.inspectMode = !state.inspectMode;
+        btnInspect.classList.toggle('active', state.inspectMode);
+        btnInspect.textContent = state.inspectMode ? '🔍 ВКЛ' : '🔍 Инспектор';
+        document.getElementById('map').classList.toggle('inspect-mode', state.inspectMode);
+        document.getElementById('inspect-badge').classList.toggle('visible', state.inspectMode);
+        if (!state.inspectMode) hidePopup();
+    });
 
-        map.on('zoomend', updateDisplay);
-        updateAllLayers();
-    })();
-    </script>
+    map.on('click', e => {
+        if (!state.inspectMode) return;
+        showPopup(e.latlng, e.containerPoint);
+    });
+
+    document.getElementById('pp-close').addEventListener('click', hidePopup);
+
+    // ════════════════════════════════════════════
+    //  CONTROLS
+    // ════════════════════════════════════════════
+    function stepTime(d) { stopAnim(); state.timestamp += d; refreshData(); }
+    document.getElementById('btn-p60').addEventListener('click', () => stepTime(-3600));
+    document.getElementById('btn-p30').addEventListener('click', () => stepTime(-1800));
+    document.getElementById('btn-p10').addEventListener('click', () => stepTime(-600));
+    document.getElementById('btn-n10').addEventListener('click', () => stepTime(600));
+    document.getElementById('btn-n30').addEventListener('click', () => stepTime(1800));
+    document.getElementById('btn-now').addEventListener('click', () => {
+        stopAnim(); state.timestamp = nowTs(); refreshData();
+        showToast('Обновлено до актуального времени');
+    });
+    document.getElementById('btn-reset').addEventListener('click', () =>
+        map.setView(CFG.defaultCenter, CFG.defaultZoom)
+    );
+    document.getElementById('btn-locate').addEventListener('click', () => {
+        if (!navigator.geolocation) { showToast('Геолокация недоступна'); return; }
+        navigator.geolocation.getCurrentPosition(
+            p => map.setView([p.coords.latitude, p.coords.longitude], 8),
+            ()  => showToast('Не удалось получить местоположение')
+        );
+    });
+    document.getElementById('sel-pixel').addEventListener('change', e => {
+        state.pixelSize = parseInt(e.target.value);
+        // При смене пикселизации нужно перерисовать — кеш для этого размера уже пуст
+        // (ключи содержат mode, но не pixelSize — чистим полностью)
+        state.tileCache.clear();
+        refreshData(); updateStatus();
+    });
+    document.getElementById('sl-opacity').addEventListener('input', e => {
+        state.opacity = parseInt(e.target.value) / 100;
+        dataLayer.setOpacity(state.opacity);
+        document.getElementById('opacity-val').textContent = e.target.value + '%';
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName==='INPUT' || e.target.tagName==='SELECT') return;
+        if (e.key==='ArrowLeft')  stepTime(-600);
+        if (e.key==='ArrowRight') stepTime(600);
+        if (e.key===' ')  { e.preventDefault(); state.playing ? stopAnim() : startAnim(); }
+        if (e.key==='r'||e.key==='R') { state.timestamp=nowTs(); refreshData(); }
+        if (e.key==='i'||e.key==='И') btnInspect.click();
+        if (e.key==='1') switchLayer('radar');
+        if (e.key==='2') switchLayer('wx');
+        if (e.key==='Escape') { if(state.inspectMode){state.inspectMode=true;btnInspect.click();} }
+        if (e.key==='+'||e.key==='=') map.zoomIn();
+        if (e.key==='-') map.zoomOut();
+    });
+
+    map.on('zoomend', () => { updateStatus(); updateZoomHint(); });
+
+    setInterval(() => {
+        if (!state.playing && nowTs() !== state.timestamp)
+            showToast('🔔 Новые данные — нажмите «Сейчас»');
+        initTimeline();
+    }, 5*60*1000);
+
+    // ════════════════════════════════════════════
+    //  TOAST
+    // ════════════════════════════════════════════
+    let toastTimer = null;
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg; el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    // ════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════
+    initTimeline();
+    updatePill();
+    updateStatus();
+    updateZoomHint();
+    refreshData();
+    showToast('1/2 — слои · Пробел — анимация · I — инспектор · R — сейчас');
+
+})();
+</script>
 </body>
 </html>
