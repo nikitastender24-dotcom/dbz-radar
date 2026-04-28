@@ -2,177 +2,74 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Радар ДМРЛ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🌧️ Пиксельный RainRadar — без сглаживания (iOS fix)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background: #0a0a0f;
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background:#0a0a0f;
+            font-family:'Segoe UI',Roboto,system-ui,sans-serif;
+            height:100vh; display:flex; flex-direction:column;
+            touch-action:pan-x pan-y pinch-zoom; /* улучшает жесты на мобильных */
         }
-        
         .header {
-            background: #0d0d1a;
-            padding: 12px 20px;
-            color: #e0e0e0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            border-bottom: 1px solid #1e1e35;
-            z-index: 1000;
+            background:#0d0d1a; padding:12px 16px; color:#e0e0e0;
+            display:flex; align-items:center; justify-content:space-between;
+            flex-wrap:wrap; gap:10px; border-bottom:1px solid #1e1e35;
+            z-index:1000;
         }
-        
-        .header h1 {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: #4a9eff;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
+        .header h1 { font-size:1.2rem; font-weight:500; color:#4a9eff; }
+        .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
         .controls button {
-            background: #141428;
-            color: #ccc;
-            border: 1px solid #2a2a45;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: 0.2s;
+            background:#141428; color:#ccc; border:1px solid #2a2a45;
+            padding:6px 12px; border-radius:6px; cursor:pointer;
+            font-size:0.85rem; transition:0.2s; white-space:nowrap;
         }
-        
-        .controls button:hover {
-            background: #1e1e3a;
-            border-color: #4a9eff;
-            color: #fff;
-        }
-        
+        .controls button:hover { background:#1e1e3a; border-color:#4a9eff; color:#fff; }
         #timestampDisplay {
-            color: #f0c060;
-            font-weight: 600;
-            font-size: 0.85rem;
-            background: #141428;
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid #2a2a45;
-            min-width: 180px;
-            text-align: center;
+            color:#f0c060; font-weight:600; font-size:0.85rem;
+            background:#141428; padding:6px 12px; border-radius:20px;
+            border:1px solid #2a2a45; min-width:160px; text-align:center;
         }
-        
-        #map {
-            flex: 1;
-            width: 100%;
-            background: #0a0a14;
-        }
-        
+        #map { flex:1; width:100%; background:#0a0a14; }
         .status-bar {
-            position: absolute;
-            bottom: 30px;
-            left: 15px;
-            background: rgba(10, 10, 20, 0.9);
-            padding: 8px 14px;
-            border-radius: 8px;
-            z-index: 999;
-            color: #999;
-            font-size: 0.75rem;
-            border: 1px solid #2a2a45;
-            pointer-events: none;
+            position:absolute; bottom:25px; left:15px;
+            background:rgba(10,10,20,0.9); padding:6px 12px;
+            border-radius:8px; z-index:999; color:#aaa;
+            font-size:0.72rem; border:1px solid #2a2a45; pointer-events:none;
         }
-        
         .legend {
-            position: absolute;
-            bottom: 30px;
-            right: 15px;
-            background: rgba(10, 10, 20, 0.9);
-            padding: 12px 16px;
-            border-radius: 12px;
-            z-index: 999;
-            color: #ccc;
-            font-size: 0.8rem;
-            border: 1px solid #2a2a45;
-            pointer-events: none;
+            position:absolute; bottom:25px; right:15px;
+            background:rgba(10,10,20,0.9); padding:10px 14px;
+            border-radius:12px; z-index:999; color:#ccc;
+            font-size:0.75rem; border:1px solid #2a2a45; pointer-events:none;
         }
-        
-        .legend .dot {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border-radius: 2px;
-            margin-right: 6px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-        
-        .pixel-control {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .pixel-control label {
-            color: #aaa;
-            font-size: 0.8rem;
-        }
-        
+        .legend .dot { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:6px; }
+        .legend-item { display:flex; align-items:center; margin-bottom:2px; }
+        .pixel-control { display:flex; align-items:center; gap:6px; }
+        .pixel-control label { color:#aaa; font-size:0.8rem; }
         .pixel-control select {
-            background: #141428;
-            color: #ccc;
-            border: 1px solid #2a2a45;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            cursor: pointer;
+            background:#141428; color:#ccc; border:1px solid #2a2a45;
+            padding:4px 8px; border-radius:4px; font-size:0.85rem; cursor:pointer;
         }
-        
-        #opacityValue {
-            color: #4a9eff;
-            min-width: 35px;
-        }
-        
-        .leaflet-container {
-            background: #0a0a14 !important;
-        }
-        
-        .leaflet-control-zoom a {
-            background: #141428 !important;
-            color: #ccc !important;
-            border-color: #2a2a45 !important;
-        }
-        
-        .leaflet-control-attribution {
-            background: rgba(10, 10, 20, 0.8) !important;
-            color: #666 !important;
-        }
-        
-        .leaflet-control-attribution a {
-            color: #888 !important;
-        }
+        #opacityValue { color:#4a9eff; min-width:35px; }
+        .leaflet-container { background:#0a0a14 !important; }
+        .leaflet-control-zoom a { background:#141428 !important; color:#ccc !important; border-color:#2a2a45 !important; }
+        .leaflet-control-attribution { background:rgba(10,10,20,0.8) !important; color:#666 !important; font-size:0.6rem; }
+        .leaflet-control-attribution a { color:#888 !important; }
 
-        canvas {
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
+        /* Жёсткое отключение сглаживания для всех canvas внутри Leaflet */
+        .leaflet-tile-container canvas,
+        .leaflet-tile {
+            image-rendering: pixelated !important;
+            image-rendering: crisp-edges !important;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🌧️ RainRadar <span style="color:#666;font-size:0.8rem;">пиксельный (без сглаживания)</span></h1>
+        <h1>🌧️ RainRadar <span style="color:#666;font-size:0.8rem;">пиксельный</span></h1>
         <div class="controls">
             <span id="timestampDisplay">⏱ загрузка...</span>
             <button id="btnPrev30">◀ -30м</button>
@@ -183,8 +80,8 @@
             <div class="pixel-control">
                 <label>Пиксель:</label>
                 <select id="pixelSize">
-                    <option value="1">1×1 (нет)</option>
-                    <option value="2" selected>2×2 (ретро)</option>
+                    <option value="1">1×1</option>
+                    <option value="2" selected>2×2</option>
                     <option value="3">3×3</option>
                     <option value="4">4×4</option>
                     <option value="6">6×6</option>
@@ -198,298 +95,291 @@
             </div>
         </div>
     </div>
-    
+
     <div id="map"></div>
-    
     <div class="status-bar" id="statusText">🟡 Загрузка...</div>
-    
-    <div class="legend">
-        <div class="legend-item"><span class="dot" style="background:#00e5ff;"></span> Очень слабые</div>
-        <div class="legend-item"><span class="dot" style="background:#00b0ff;"></span> Слабые</div>
-        <div class="legend-item"><span class="dot" style="background:#0090ff;"></span> Умеренные</div>
-        <div class="legend-item"><span class="dot" style="background:#00c800;"></span> Средние</div>
-        <div class="legend-item"><span class="dot" style="background:#ffc800;"></span> Сильные</div>
-        <div class="legend-item"><span class="dot" style="background:#ff5000;"></span> Очень сильные</div>
-        <div class="legend-item"><span class="dot" style="background:#d50000;"></span> Экстремальные</div>
-    </div>
-    
+    <div class="legend" id="legendContainer"></div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        (function() {
-            const RADAR_DELAY = 600;
-            const MAX_NATIVE_ZOOM = 5;
-            const MAX_DISPLAY_ZOOM = 10;
-            
-            const defaultLat = 58.141;
-            const defaultLon = 60.866;
-            const defaultZoom = 5;
-            
-            let currentTimestamp;
-            let currentPixelSize = 2;
-            let currentOpacity = 1.0;
-            
-            function getLatestRadarTimestamp() {
-                const now = Math.floor(Date.now() / 1000);
-                return Math.floor((now - RADAR_DELAY) / 600) * 600;
-            }
-            
-            currentTimestamp = getLatestRadarTimestamp();
-            
-            const map = L.map('map', {
-                center: [defaultLat, defaultLon],
-                zoom: defaultZoom,
-                maxZoom: MAX_DISPLAY_ZOOM,
-                zoomControl: true
-            });
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© <a href="https://carto.com/">CARTO</a>',
-                subdomains: 'abcd',
-                maxZoom: MAX_DISPLAY_ZOOM
-            }).addTo(map);
-            
-            // --- Палитра ---
-            const radarPalette = [
-                { value: 5,  color: [0, 229, 255] },
-                { value: 10, color: [0, 176, 255] },
-                { value: 15, color: [0, 144, 255] },
-                { value: 20, color: [0, 80, 200] },
-                { value: 25, color: [0, 200, 0] },
-                { value: 30, color: [255, 200, 0] },
-                { value: 35, color: [255, 145, 0] },
-                { value: 40, color: [255, 80, 0] },
-                { value: 45, color: [255, 23, 68] },
-                { value: 50, color: [213, 0, 0] },
-                { value: 55, color: [180, 0, 180] },
-            ];
-            
-            function getRadarColor(value) {
-                if (value < 5) return null;
-                for (let i = radarPalette.length - 1; i >= 0; i--) {
-                    if (value >= radarPalette[i].value) return radarPalette[i].color;
+    (function() {
+        const RADAR_DELAY = 600;
+        const MAX_NATIVE_ZOOM = 5;
+        const MAX_DISPLAY_ZOOM = 10;
+
+        const defaultLat = 58.141;
+        const defaultLon = 60.866;
+        const defaultZoom = 5;
+
+        let currentTimestamp;
+        let currentPixelSize = 2;
+        let currentOpacity = 1.0;
+
+        function getLatestRadarTimestamp() {
+            const now = Math.floor(Date.now() / 1000);
+            return Math.floor((now - RADAR_DELAY) / 600) * 600;
+        }
+
+        currentTimestamp = getLatestRadarTimestamp();
+
+        // ---------- Карта ----------
+        const map = L.map('map', {
+            center: [defaultLat, defaultLon],
+            zoom: defaultZoom,
+            maxZoom: MAX_DISPLAY_ZOOM,
+            zoomControl: true,
+            attributionControl: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: MAX_DISPLAY_ZOOM
+        }).addTo(map);
+
+        // ---------- НОВАЯ ПАЛИТРА дБЗ (строго по списку) ----------
+        const radarPalette = [
+            { value: 80, color: [0, 0, 0] },               // чёрный
+            { value: 75, color: [80, 40, 10] },            // тёмно-коричневый
+            { value: 65, color: [139, 69, 19] },           // коричневый
+            { value: 55, color: [180, 0, 0] },             // тёмно-красный
+            { value: 50, color: [255, 0, 0] },             // красный
+            { value: 45, color: [255, 100, 0] },           // тёмно-оранжевый
+            { value: 40, color: [255, 165, 0] },           // оранжевый
+            { value: 35, color: [255, 255, 0] },           // жёлтый
+            { value: 25, color: [255, 255, 100] },         // светло-жёлтый
+            { value: 20, color: [0, 128, 0] },             // тёмно-зелёный
+            { value: 15, color: [0, 200, 0] },             // зелёный
+            { value: 10, color: [0, 255, 100] },           // светло-зелёный
+            { value: 5,  color: [153, 255, 51] }           // салатовый
+        ];
+
+        function getRadarColor(intensity) {
+            if (intensity < 5) return null;
+            for (let i = 0; i < radarPalette.length; i++) {
+                if (intensity >= radarPalette[i].value) {
+                    return radarPalette[i].color;
                 }
-                return null;
             }
-            
-            // --- Пикселизация с масштабированием ---
-            function pixelateAndScale(sourceCanvas, pixelSize, scale) {
-                const sourceWidth = sourceCanvas.width;
-                const sourceHeight = sourceCanvas.height;
-                
-                // Размер в пикселях после пикселизации (на нативном зуме)
-                const pixelatedWidth = Math.ceil(sourceWidth / pixelSize);
-                const pixelatedHeight = Math.ceil(sourceHeight / pixelSize);
-                
-                // Создаём маленький canvas для пикселизированного изображения
-                const smallCanvas = document.createElement('canvas');
-                smallCanvas.width = pixelatedWidth;
-                smallCanvas.height = pixelatedHeight;
-                const smallCtx = smallCanvas.getContext('2d');
-                
-                // Получаем данные исходного изображения
-                const sourceCtx = sourceCanvas.getContext('2d');
-                const imageData = sourceCtx.getImageData(0, 0, sourceWidth, sourceHeight);
-                const data = imageData.data;
-                
-                // Группируем пиксели в блоки и усредняем
-                for (let py = 0; py < pixelatedHeight; py++) {
-                    for (let px = 0; px < pixelatedWidth; px++) {
-                        let totalR = 0, totalG = 0, totalB = 0, totalA = 0, count = 0;
-                        
-                        const startX = px * pixelSize;
-                        const startY = py * pixelSize;
-                        const endX = Math.min(startX + pixelSize, sourceWidth);
-                        const endY = Math.min(startY + pixelSize, sourceHeight);
-                        
-                        for (let y = startY; y < endY; y++) {
-                            for (let x = startX; x < endX; x++) {
-                                const idx = (y * sourceWidth + x) * 4;
-                                if (data[idx + 3] > 0) {
-                                    totalR += data[idx];
-                                    totalG += data[idx + 1];
-                                    totalB += data[idx + 2];
-                                    totalA += data[idx + 3];
-                                    count++;
-                                }
+            return null;
+        }
+
+        // ---------- Легенда (динамическая) ----------
+        function buildLegend() {
+            const legendDiv = document.getElementById('legendContainer');
+            legendDiv.innerHTML = '';
+            // снизу вверх от слабых к сильным? Покажем в порядке возрастания
+            const ascending = [...radarPalette].reverse();
+            ascending.forEach((item, idx) => {
+                const [r,g,b] = item.color;
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `<span class="dot" style="background:rgb(${r},${g},${b});"></span> ${item.value} дБЗ`;
+                legendDiv.appendChild(div);
+            });
+        }
+        buildLegend();
+
+        // ---------- Пикселизация + масштабирование ----------
+        function pixelateAndScale(sourceCanvas, pixelSize, scale) {
+            const srcW = sourceCanvas.width;
+            const srcH = sourceCanvas.height;
+
+            // 1. Усредняем до маленького холста
+            const smallW = Math.ceil(srcW / pixelSize);
+            const smallH = Math.ceil(srcH / pixelSize);
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = smallW;
+            smallCanvas.height = smallH;
+            const smallCtx = smallCanvas.getContext('2d');
+
+            const srcCtx = sourceCanvas.getContext('2d');
+            const imgData = srcCtx.getImageData(0, 0, srcW, srcH);
+            const data = imgData.data;
+
+            for (let py = 0; py < smallH; py++) {
+                for (let px = 0; px < smallW; px++) {
+                    let totalR=0, totalG=0, totalB=0, totalA=0, count=0;
+                    const startX = px * pixelSize;
+                    const startY = py * pixelSize;
+                    const endX = Math.min(startX + pixelSize, srcW);
+                    const endY = Math.min(startY + pixelSize, srcH);
+
+                    for (let y = startY; y < endY; y++) {
+                        for (let x = startX; x < endX; x++) {
+                            const idx = (y * srcW + x) * 4;
+                            if (data[idx + 3] > 0) {
+                                totalR += data[idx];
+                                totalG += data[idx + 1];
+                                totalB += data[idx + 2];
+                                totalA += data[idx + 3];
+                                count++;
                             }
                         }
-                        
-                        if (count > 0) {
-                            smallCtx.fillStyle = `rgba(${Math.round(totalR/count)}, ${Math.round(totalG/count)}, ${Math.round(totalB/count)}, ${Math.round(totalA/count)/255})`;
-                        } else {
-                            smallCtx.fillStyle = 'rgba(0,0,0,0)';
-                        }
-                        smallCtx.fillRect(px, py, 1, 1);
                     }
+                    if (count > 0) {
+                        smallCtx.fillStyle = `rgba(${Math.round(totalR/count)},${Math.round(totalG/count)},${Math.round(totalB/count)},${Math.round(totalA/count)/255})`;
+                    } else {
+                        smallCtx.fillStyle = 'rgba(0,0,0,0)';
+                    }
+                    smallCtx.fillRect(px, py, 1, 1);
                 }
-                
-                // Масштабируем с pixelated-рендерингом
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = pixelatedWidth * scale;
-                finalCanvas.height = pixelatedHeight * scale;
-                const finalCtx = finalCanvas.getContext('2d');
-                
-                // ВАЖНО: отключаем сглаживание
-                finalCtx.imageSmoothingEnabled = false;
-                finalCtx.drawImage(smallCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-                
-                return finalCanvas;
             }
-            
-            // --- Кастомный слой радара ---
-            const RadarCanvasLayer = L.TileLayer.extend({
-                createTile: function(coords, done) {
-                    const tile = document.createElement('canvas');
-                    tile.width = 256;
-                    tile.height = 256;
-                    
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    const url = `https://rainradar.ru/composite/${currentTimestamp}/${coords.z}/${coords.x}_${coords.y}.png`;
-                    
-                    img.onload = function() {
-                        // Временный canvas для обработки
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.width = 256;
-                        tempCanvas.height = 256;
-                        const tempCtx = tempCanvas.getContext('2d');
-                        
-                        // Рисуем оригинал
-                        tempCtx.drawImage(img, 0, 0);
-                        
-                        // Применяем палитру
-                        const imageData = tempCtx.getImageData(0, 0, 256, 256);
-                        const pixels = imageData.data;
-                        
-                        for (let i = 0; i < pixels.length; i += 4) {
-                            const intensity = Math.round((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3);
-                            const alpha = pixels[i + 3];
-                            
-                            if (intensity > 5 && alpha > 0) {
-                                const color = getRadarColor(intensity);
-                                if (color) {
-                                    pixels[i] = color[0];
-                                    pixels[i + 1] = color[1];
-                                    pixels[i + 2] = color[2];
-                                    pixels[i + 3] = Math.min(255, 180 + intensity);
-                                }
-                            } else {
-                                pixels[i + 3] = 0;
+
+            // 2. Масштабируем с отключением сглаживания (важно для Safari)
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = smallW * scale;
+            finalCanvas.height = smallH * scale;
+            const finalCtx = finalCanvas.getContext('2d');
+            finalCtx.imageSmoothingEnabled = false;
+            finalCtx.webkitImageSmoothingEnabled = false;   // Safari / старый WebKit
+            finalCtx.mozImageSmoothingEnabled = false;      // Firefox
+            finalCtx.drawImage(smallCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+            return finalCanvas;
+        }
+
+        // ---------- Кастомный тайловый слой ----------
+        const RadarCanvasLayer = L.TileLayer.extend({
+            createTile: function(coords, done) {
+                const tile = document.createElement('canvas');
+                tile.width = 256;
+                tile.height = 256;
+
+                // Принудительно убираем сглаживание CSS
+                tile.style.imageRendering = 'pixelated';
+                tile.style.imageRendering = 'crisp-edges';
+                tile.style.setProperty('image-rendering', 'pixelated', 'important');
+                tile.style.setProperty('image-rendering', 'crisp-edges', 'important');
+
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                const url = `https://rainradar.ru/composite/${currentTimestamp}/${coords.z}/${coords.x}_${coords.y}.png`;
+
+                img.onload = function() {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 256;
+                    tempCanvas.height = 256;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0);
+
+                    const imageData = tempCtx.getImageData(0, 0, 256, 256);
+                    const pixels = imageData.data;
+
+                    // Применяем палитру
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        const intensity = Math.round((pixels[i] + pixels[i+1] + pixels[i+2]) / 3);
+                        const alpha = pixels[i+3];
+                        if (intensity >= 5 && alpha > 0) {
+                            const color = getRadarColor(intensity);
+                            if (color) {
+                                pixels[i] = color[0];
+                                pixels[i+1] = color[1];
+                                pixels[i+2] = color[2];
+                                pixels[i+3] = 210; // непрозрачность
                             }
-                        }
-                        
-                        tempCtx.putImageData(imageData, 0, 0);
-                        
-                        // Применяем пикселизацию с масштабированием
-                        if (currentPixelSize > 1) {
-                            const scale = Math.max(1, Math.pow(2, coords.z - MAX_NATIVE_ZOOM));
-                            const pixelatedCanvas = pixelateAndScale(tempCanvas, currentPixelSize, scale);
-                            
-                            // Копируем результат в итоговый тайл
-                            const finalCtx = tile.getContext('2d');
-                            finalCtx.imageSmoothingEnabled = false;
-                            finalCtx.drawImage(pixelatedCanvas, 0, 0, 256, 256);
                         } else {
-                            // Без пикселизации — просто копируем
-                            const finalCtx = tile.getContext('2d');
-                            finalCtx.imageSmoothingEnabled = false;
-                            finalCtx.drawImage(tempCanvas, 0, 0);
+                            pixels[i+3] = 0;
                         }
-                        
-                        done(null, tile);
-                    };
-                    
-                    img.onerror = function() {
-                        done(null, tile);
-                    };
-                    
-                    img.src = url;
-                    
-                    return tile;
-                }
-            });
-            
-            const radarLayer = new RadarCanvasLayer('', {
-                minZoom: 3,
-                maxNativeZoom: MAX_NATIVE_ZOOM,
-                maxZoom: MAX_DISPLAY_ZOOM,
-                tileSize: 256,
-                bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0])
-            }).addTo(map);
-            
-            const labelsLayer = L.tileLayer('', {
-                opacity: 0.8,
-                minZoom: 3,
-                maxNativeZoom: MAX_NATIVE_ZOOM,
-                maxZoom: MAX_DISPLAY_ZOOM,
-                tileSize: 256,
-                bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0]),
-                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-            }).addTo(map);
-            
-            function updateAllLayers() {
-                labelsLayer.setUrl(`https://rainradar.ru/labels?z={z}&x={x}&y={y}`);
-                labelsLayer.redraw();
-                radarLayer.redraw();
-                updateDisplay();
+                    }
+                    tempCtx.putImageData(imageData, 0, 0);
+
+                    // Пикселизация (если включена)
+                    const finalCtx = tile.getContext('2d');
+                    finalCtx.imageSmoothingEnabled = false;
+                    finalCtx.webkitImageSmoothingEnabled = false;
+                    finalCtx.mozImageSmoothingEnabled = false;
+
+                    if (currentPixelSize > 1) {
+                        const scale = Math.max(1, Math.pow(2, coords.z - MAX_NATIVE_ZOOM));
+                        const pixCanvas = pixelateAndScale(tempCanvas, currentPixelSize, scale);
+                        finalCtx.drawImage(pixCanvas, 0, 0, 256, 256);
+                    } else {
+                        finalCtx.drawImage(tempCanvas, 0, 0);
+                    }
+
+                    done(null, tile);
+                };
+
+                img.onerror = function() {
+                    done(null, tile);
+                };
+
+                img.src = url;
+                return tile;
             }
-            
-            function formatTimestamp(ts) {
-                const d = new Date(ts * 1000);
-                return d.toLocaleString('ru-RU', {
-                    day: 'numeric', month: 'short',
-                    hour: '2-digit', minute: '2-digit',
-                    timeZone: 'Europe/Moscow'
-                }) + ' МСК';
-            }
-            
-            function updateDisplay() {
-                document.getElementById('timestampDisplay').textContent = 
-                    '⏱ ' + formatTimestamp(currentTimestamp);
-                document.getElementById('opacityValue').textContent = 
-                    document.getElementById('opacitySlider').value + '%';
-                const zoom = map.getZoom();
-                document.getElementById('statusText').textContent = 
-                    '🟢 ' + formatTimestamp(currentTimestamp) + 
-                    ' | Зум: ' + zoom + 
-                    ' | Пиксель: ' + currentPixelSize + '×' + currentPixelSize +
-                    (zoom > MAX_NATIVE_ZOOM ? ' (цифровой)' : '');
-            }
-            
-            document.getElementById('opacitySlider').addEventListener('input', function(e) {
-                currentOpacity = parseInt(e.target.value) / 100;
-                radarLayer.setOpacity(currentOpacity);
-                updateDisplay();
-            });
-            
-            document.getElementById('pixelSize').addEventListener('change', function(e) {
-                currentPixelSize = parseInt(e.target.value);
-                updateAllLayers();
-            });
-            
-            document.getElementById('btnPrev10').addEventListener('click', () => {
-                currentTimestamp -= 600; updateAllLayers();
-            });
-            document.getElementById('btnPrev30').addEventListener('click', () => {
-                currentTimestamp -= 1800; updateAllLayers();
-            });
-            document.getElementById('btnNext30').addEventListener('click', () => {
-                currentTimestamp += 1800; updateAllLayers();
-            });
-            document.getElementById('btnNext10').addEventListener('click', () => {
-                currentTimestamp += 600; updateAllLayers();
-            });
-            document.getElementById('btnNow').addEventListener('click', () => {
-                currentTimestamp = getLatestRadarTimestamp(); updateAllLayers();
-            });
-            
-            map.on('zoomend', updateDisplay);
-            
+        });
+
+        const radarLayer = new RadarCanvasLayer('', {
+            minZoom: 3,
+            maxNativeZoom: MAX_NATIVE_ZOOM,
+            maxZoom: MAX_DISPLAY_ZOOM,
+            tileSize: 256,
+            bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0])
+        }).addTo(map);
+
+        // ---------- Слой меток ----------
+        const labelsLayer = L.tileLayer('', {
+            opacity: 0.8,
+            minZoom: 3,
+            maxNativeZoom: MAX_NATIVE_ZOOM,
+            maxZoom: MAX_DISPLAY_ZOOM,
+            tileSize: 256,
+            bounds: L.latLngBounds([35.0, 15.0], [75.0, 80.0]),
+            errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+        }).addTo(map);
+
+        function updateAllLayers() {
+            labelsLayer.setUrl(`https://rainradar.ru/labels?z={z}&x={x}&y={y}`);
+            labelsLayer.redraw();
+            radarLayer.redraw();
+            updateDisplay();
+        }
+
+        function formatTimestamp(ts) {
+            const d = new Date(ts * 1000);
+            return d.toLocaleString('ru-RU', {
+                day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
+                timeZone: 'Europe/Moscow'
+            }) + ' МСК';
+        }
+
+        function updateDisplay() {
+            document.getElementById('timestampDisplay').textContent =
+                '⏱ ' + formatTimestamp(currentTimestamp);
+            document.getElementById('opacityValue').textContent =
+                document.getElementById('opacitySlider').value + '%';
+            const z = map.getZoom();
+            document.getElementById('statusText').textContent =
+                '🟢 ' + formatTimestamp(currentTimestamp) +
+                ' | Зум: ' + z + ' | Пиксель: ' + currentPixelSize + '×' + currentPixelSize +
+                (z > MAX_NATIVE_ZOOM ? ' (цифровой)' : '');
+        }
+
+        // ---------- Обработчики ----------
+        document.getElementById('opacitySlider').addEventListener('input', function(e) {
+            currentOpacity = parseInt(e.target.value) / 100;
+            radarLayer.setOpacity(currentOpacity);
+            updateDisplay();
+        });
+
+        document.getElementById('pixelSize').addEventListener('change', function(e) {
+            currentPixelSize = parseInt(e.target.value);
             updateAllLayers();
-            
-            console.log('🌧️ Пиксельный радар готов (без сглаживания)');
-        })();
+        });
+
+        document.getElementById('btnPrev10').addEventListener('click', ()=> { currentTimestamp-=600; updateAllLayers(); });
+        document.getElementById('btnPrev30').addEventListener('click', ()=> { currentTimestamp-=1800; updateAllLayers(); });
+        document.getElementById('btnNext10').addEventListener('click', ()=> { currentTimestamp+=600; updateAllLayers(); });
+        document.getElementById('btnNext30').addEventListener('click', ()=> { currentTimestamp+=1800; updateAllLayers(); });
+        document.getElementById('btnNow').addEventListener('click', ()=> {
+            currentTimestamp = getLatestRadarTimestamp();
+            updateAllLayers();
+        });
+
+        map.on('zoomend', updateDisplay);
+        updateAllLayers();
+    })();
     </script>
 </body>
 </html>
