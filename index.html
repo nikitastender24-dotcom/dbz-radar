@@ -465,10 +465,16 @@
     const WX_PALETTE = [
         // Осадки
         {
+            id:'cloud', group:'Обласность',
+            label:'Облачность',   emoji:'🌦',
+            rgb:[153, 153 153],        // светло-зелёный
+            minDbz:6,  maxDbz:9,
+        },
+        {
             id:'rain_w', group:'Осадки',
             label:'Осадки слабые',   emoji:'🌦',
             rgb:[140, 255, 138],        // светло-зелёный
-            minDbz:6,  maxDbz:14,
+            minDbz:10,  maxDbz:14,
         },
         {
             id:'rain_m', group:'Осадки',
