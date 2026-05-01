@@ -3,1161 +3,1247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>🌧️ RainRadar Pro</title>
+    <title>KAROLA</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
-            --bg-primary: #08080f;
-            --bg-card: #111120;
-            --border: #1e1e35;
-            --accent: #4a9eff;
-            --accent-dim: #2a5a9f;
-            --text-primary: #e0e0f0;
-            --text-secondary: #8888aa;
-            --text-muted: #555570;
-            --warn: #f0c060;
-            --success: #44cc88;
-            --radius: 8px;
-            --radius-lg: 14px;
-            --header-h: 56px;
-            --timeline-h: 64px;
+            --bg: #c0c0c0; --dark: #808080; --darker: #404040;
+            --light: #dfdfdf; --lighter: #ffffff; --navy: #000080;
+            --header-h: 56px; --timeline-h: 66px;
         }
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; }
 
         html, body {
-            height: 100%;
-            background: var(--bg-primary);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: var(--text-primary);
-            overflow: hidden;
-            user-select: none;
+            height:100%; background:var(--bg);
+            font-family:'MS Sans Serif','Microsoft Sans Serif','Tahoma',sans-serif;
+            font-size:11px; color:#000; overflow:hidden; user-select:none;
         }
 
-        #header {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: var(--header-h);
-            background: rgba(13,13,26,0.97);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px;
-            padding: 0 14px; z-index: 2000;
+        .wbtn {
+            background:var(--bg); color:#000; border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            padding:4px 10px; cursor:pointer; font-size:11px;
+            font-family:inherit; white-space:nowrap; min-height:23px; outline:none;
+        }
+        .wbtn:hover { background:#d4d0c8; }
+        .wbtn:active, .wbtn.on {
+            border-color:var(--darker) var(--lighter) var(--lighter) var(--darker);
+            padding:5px 9px 3px 11px; background:#b0b0b0;
+        }
+        .wbtn.hi {
+            background:var(--navy); color:#fff; font-weight:bold;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
         }
 
-        .logo {
-            font-size: 1.1rem; font-weight: 700;
-            color: var(--accent); white-space: nowrap;
+        #titlebar {
+            position:fixed; top:0; left:0; right:0; height:18px;
+            background:linear-gradient(90deg,var(--navy),#1084d0);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 2px; z-index:9999;
         }
-        .logo span { color: var(--text-secondary); font-weight: 400; font-size: 0.72rem; }
+        .tb-text { color:#fff; font-weight:bold; font-size:11px; padding-left:10px; }
+        .tb-btns { display:flex; gap:2px; align-items:center; }
+        .tb-btn {
+            width:16px; height:14px; background:var(--bg); border:1px solid #000;
+            cursor:pointer; font-size:8px; line-height:13px; text-align:center;
+            font-weight:bold; color:#000; font-family:inherit;
+        }
 
-        #timestamp-pill {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 20px; padding: 5px 14px;
-            font-size: 0.82rem; font-weight: 600; color: var(--warn);
-            min-width: 175px; text-align: center; white-space: nowrap;
+        #login-screen {
+            position:fixed; top:0;left:0;right:0;bottom:0;
+            background:var(--bg); z-index:50000;
+            display:flex; align-items:center; justify-content:center;
+            flex-direction:column; gap:10px;
         }
-        #timestamp-pill.future { color: #88aaff; }
+        #login-screen .login-box {
+            background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            padding:20px; text-align:center; min-width:280px;
+        }
+        #login-screen h2 { font-size:14px; margin-bottom:10px; color:var(--navy); }
+        #login-screen input {
+            border:2px inset #808080; background:#fff; padding:5px 8px;
+            font-size:12px; font-family:inherit; width:100%; margin-bottom:8px;
+        }
 
-        .spacer { flex: 1; }
+        #menubar {
+            position:fixed; top:18px; left:0; right:0; height:22px;
+            background:var(--bg); border-bottom:1px solid var(--darker);
+            display:flex; align-items:center; padding:0 2px; z-index:9998;
+        }
+        .mbar-item {
+            padding:3px 8px; cursor:pointer; font-size:11px; color:#000;
+            position:relative; border:1px solid transparent;
+        }
+        .mbar-item:hover, .mbar-item.active {
+            background:var(--navy); color:#fff; border:1px solid var(--lighter);
+        }
 
-        #layer-switcher {
-            display: flex; align-items: center;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px; overflow: hidden; flex-shrink: 0;
+        .mbar-dropdown {
+            position:absolute; top:100%; left:0; display:none;
+            background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            z-index:10000; min-width:200px; padding:2px;
         }
-        .layer-btn {
-            padding: 7px 16px; font-size: 0.82rem;
-            cursor: pointer; border: none;
-            background: transparent; color: var(--text-secondary);
-            transition: 0.15s; white-space: nowrap;
-            border-right: 1px solid var(--border);
+        .mbar-dropdown.open { display:block; }
+        .mbar-dropdown .mitem {
+            padding:5px 22px 5px 10px; cursor:pointer; font-size:11px;
+            white-space:nowrap; display:flex; align-items:center; gap:6px;
         }
-        .layer-btn:last-child { border-right: none; }
-        .layer-btn:hover { color: #fff; background: #1a1a32; }
-        .layer-btn.active-radar { background: rgba(74,158,255,0.2); color: #7ac0ff; font-weight: 600; }
-        .layer-btn.active-wx    { background: rgba(100,220,120,0.2); color: #66dd88; font-weight: 600; }
+        .mbar-dropdown .mitem:hover { background:var(--navy); color:#fff; }
+        .mbar-dropdown .mitem .check { width:14px; text-align:center; font-weight:bold; }
+        .mbar-dropdown .msep { height:1px; background:var(--dark); margin:3px 0; }
 
-        .btn {
-            background: var(--bg-card); color: var(--text-secondary);
-            border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 6px 11px; cursor: pointer; font-size: 0.82rem;
-            transition: 0.15s; white-space: nowrap;
-            display: flex; align-items: center; gap: 5px;
+        #toolbar {
+            position:fixed; top:40px; left:0; right:0; height:var(--header-h);
+            background:var(--bg); border-bottom:1px solid var(--darker);
+            display:flex; align-items:center; gap:4px; padding:3px 6px; z-index:2000;
         }
-        .btn:hover { background: #1a1a32; border-color: var(--accent); color: #fff; }
-        .btn:active { transform: scale(0.96); }
-        .btn.active { background: rgba(74,158,255,0.15); border-color: var(--accent); color: var(--accent); }
-        .btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+        .sep { width:1px; height:44px; background:var(--dark); margin:0 4px; }
 
-        .select-wrap { display: flex; align-items: center; gap: 6px; }
-        .select-wrap label { color: var(--text-secondary); font-size: 0.78rem; white-space: nowrap; }
-        .select-wrap select, .select-wrap input[type=range] {
-            background: var(--bg-card); color: var(--text-primary);
-            border: 1px solid var(--border); border-radius: 6px;
-            padding: 4px 8px; font-size: 0.82rem; cursor: pointer; outline: none;
+        #timebox {
+            background:#000; color:#0f0; font-family:'Courier New',monospace;
+            font-size:13px; font-weight:bold; padding:4px 10px;
+            border:2px inset #808080; min-width:180px; text-align:center; letter-spacing:1px;
         }
-        .val-badge { color: var(--accent); font-size: 0.8rem; min-width: 36px; }
+        #timebox.future { color:#ff0; }
 
-        #map {
-            position: fixed;
-            top: var(--header-h); left: 0; right: 0;
-            bottom: var(--timeline-h);
+        .layer-sw {
+            display:flex; border:2px solid;
+            border-color:var(--darker) var(--lighter) var(--lighter) var(--darker); overflow:hidden;
         }
-        #map.inspect-mode { cursor: crosshair !important; }
+        .layer-sw button {
+            padding:5px 12px; font-size:11px; cursor:pointer; border:none;
+            background:var(--bg); color:#000; font-family:inherit; white-space:nowrap; min-height:23px;
+        }
+        .layer-sw button.sel {
+            background:var(--navy); color:#fff; font-weight:bold; border:1px inset #808080;
+        }
 
-        #timeline {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: var(--timeline-h);
-            background: rgba(13,13,26,0.97);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid var(--border);
-            display: flex; align-items: center;
-            padding: 0 14px; gap: 8px; z-index: 2000;
-        }
-        .tl-btn {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius); color: var(--text-secondary);
-            padding: 7px 12px; cursor: pointer; font-size: 0.82rem;
-            transition: 0.15s; white-space: nowrap;
-        }
-        .tl-btn:hover { background: #1a1a32; border-color: var(--accent); color: #fff; }
-        .tl-btn:active { transform: scale(0.96); }
-        .tl-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+        .px-group { display:flex; align-items:center; gap:3px; }
+        .px-group label { font-weight:bold; font-size:11px; }
 
-        #play-btn {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: var(--accent-dim); border: 2px solid var(--accent);
-            color: #fff; font-size: 1.1rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.15s; flex-shrink: 0;
+        #profile-badge {
+            position:fixed; top:20px; right:8px; z-index:10001;
+            background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            padding:2px 8px; font-size:11px; font-weight:bold;
+            cursor:pointer; display:flex; align-items:center; gap:4px;
         }
-        #play-btn:hover { background: var(--accent); transform: scale(1.08); }
-        #play-btn.playing { background: #aa3322; border-color: #ff5544; }
+        #profile-badge:hover { background:#d4d0c8; }
 
-        #timeline-track {
-            flex: 1; position: relative; height: 36px;
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius); overflow: hidden; cursor: pointer;
+        #mapbox {
+            position:fixed; top:calc(18px + 22px + var(--header-h)); left:0; right:0;
+            bottom:var(--timeline-h); border:2px inset #808080; background:var(--dark);
         }
-        #timeline-fill {
-            position: absolute; top: 0; left: 0; height: 100%;
-            background: linear-gradient(90deg, #1a3a6a, var(--accent));
-            pointer-events: none; opacity: 0.5; transition: width 0.2s;
-        }
-        #timeline-thumb {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            width: 4px; height: 28px; background: var(--accent);
-            border-radius: 2px; pointer-events: none;
-            box-shadow: 0 0 8px var(--accent); transition: left 0.2s;
-        }
-        .tl-labels {
-            position: absolute; bottom: 2px; left: 0; right: 0;
-            display: flex; justify-content: space-between;
-            padding: 0 4px; pointer-events: none;
-        }
-        .tl-labels span { font-size: 0.6rem; color: var(--text-muted); }
-
-        #speed-badge {
-            font-size: 0.75rem; color: var(--accent);
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 6px; padding: 3px 8px;
-            cursor: pointer; transition: 0.15s;
-        }
-        #speed-badge:hover { border-color: var(--accent); color: #fff; }
+        #map { width:100%; height:100%; }
+        #map.inspect { cursor:crosshair !important; }
 
         .panel {
-            position: absolute;
-            background: rgba(10,10,20,0.93);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            z-index: 1500; padding: 10px 13px;
+            position:fixed; background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            z-index:1500; font-size:11px;
         }
+        .panel .ptitle {
+            background:var(--navy); color:#fff; font-weight:bold;
+            padding:2px 5px; display:flex; justify-content:space-between; align-items:center;
+        }
+        .panel .pbody { padding:6px 8px; }
 
-        #legend-wrap {
-            bottom: calc(var(--timeline-h) + 12px); right: 12px;
-            max-height: calc(100vh - var(--header-h) - var(--timeline-h) - 30px);
-            overflow-y: auto; min-width: 160px;
+        #legend-panel {
+            top:calc(18px + 22px + var(--header-h) + 8px); right:8px;
+            max-height:calc(100vh - 18px - 22px - var(--header-h) - var(--timeline-h) - 80px);
+            overflow-y:auto; min-width:170px;
+            display:block;
         }
-        #legend-wrap::-webkit-scrollbar { width: 4px; }
-        #legend-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-        .legend-block h4 {
-            font-size: 0.68rem; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 7px; text-align: center;
+        #legend-panel::-webkit-scrollbar { width:16px; }
+        #legend-panel::-webkit-scrollbar-track { background:var(--bg); border:2px inset #808080; }
+        #legend-panel::-webkit-scrollbar-thumb {
+            background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
         }
-        .leg-group-hdr {
-            font-size: 0.62rem; color: var(--accent);
-            text-transform: uppercase; letter-spacing: 0.8px;
-            margin: 8px 0 3px; padding-top: 6px;
-            border-top: 1px solid var(--border);
+        .leg-section-header {
+            font-size:10px; font-weight:bold; text-transform:uppercase;
+            color:var(--navy); margin:6px 0 2px; padding-top:4px;
+            border-top:2px groove #808080;
         }
-        .leg-group-hdr:first-child { margin-top: 0; border-top: none; }
-        .leg-item {
-            display: flex; align-items: center; gap: 6px;
-            margin-bottom: 3px; font-size: 0.71rem;
+        .leg-section-header:first-child { border-top:none; margin-top:0; padding-top:0; }
+        .leg-row {
+            display:flex; align-items:center; gap:5px;
+            margin-bottom:1px; font-size:10px; padding:2px 0;
         }
         .leg-swatch {
-            width: 24px; height: 11px; border-radius: 2px;
-            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+            width:30px; height:12px; flex-shrink:0;
+            border:2px inset #808080;
         }
-        .leg-label { color: var(--text-secondary); line-height: 1.2; }
-        .leg-range { color: var(--text-muted); font-size: 0.65rem; margin-left: auto; }
+        .leg-label { flex:1; color:#000; }
+        .leg-range { color:var(--darker); font-size:9px; margin-left:auto; }
 
-        #status {
-            bottom: calc(var(--timeline-h) + 12px); left: 12px;
-            font-size: 0.72rem; color: var(--text-secondary);
-            max-width: 270px; line-height: 1.7;
+        #statusbar {
+            position:fixed; bottom:var(--timeline-h); left:0; right:0; height:20px;
+            background:var(--bg); border-top:1px solid var(--lighter);
+            border-bottom:1px solid var(--darker);
+            display:flex; align-items:center; padding:0 6px; gap:8px; z-index:1500;
         }
-        .dot {
-            display: inline-block; width: 8px; height: 8px;
-            border-radius: 50%; margin-right: 5px; background: var(--success);
-        }
-        .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+        .st-dot { width:11px; height:11px; border:1px inset #808080; background:#0f0; }
+        .st-dot.busy { background:#ff0; animation:blink 0.7s infinite; }
 
-        #inspect-badge {
-            top: calc(var(--header-h) + 10px); left: 50%; transform: translateX(-50%);
-            font-size: 0.78rem; white-space: nowrap; color: var(--accent);
-            pointer-events: none; opacity: 0; transition: opacity 0.3s;
-            background: rgba(74,158,255,0.1); border-color: var(--accent);
-            border-radius: 20px;
+        #timeline {
+            position:fixed; bottom:0; left:0; right:0; height:var(--timeline-h);
+            background:var(--bg); border-top:2px solid var(--lighter);
+            display:flex; align-items:center; padding:4px 6px; gap:4px; z-index:2000;
         }
-        #inspect-badge.visible { opacity: 1; }
+        #playbtn {
+            width:36px; height:36px; background:#008000;
+            border:3px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            color:#fff; font-size:16px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; font-weight:bold;
+        }
+        #playbtn.playing { background:#800000; }
+        #track {
+            flex:1; position:relative; height:26px;
+            background:#fff; border:2px inset #808080; cursor:pointer;
+        }
+        #trackfill {
+            position:absolute; top:0; left:0; height:100%;
+            background:var(--navy); opacity:0.4; transition:width 0.1s;
+        }
+        #trackthumb {
+            position:absolute; top:0; transform:translateX(-50%);
+            width:5px; height:100%; background:#000; border:1px solid #fff;
+            transition:left 0.1s; pointer-events:none;
+        }
+        .tl-lbls {
+            position:absolute; bottom:2px; left:0; right:0;
+            display:flex; justify-content:space-between; padding:0 4px; pointer-events:none;
+        }
+        .tl-lbls span { font-size:8px; font-weight:bold; color:#000; }
+        #speedbadge {
+            font-weight:bold; font-size:11px; padding:4px 7px; cursor:pointer;
+            border:2px inset #808080; background:#fff; min-width:30px; text-align:center;
+        }
 
-        #zoom-hint {
-            top: calc(var(--header-h) + 10px); right: 12px;
-            font-size: 0.7rem; color: var(--text-muted);
-            pointer-events: none; opacity: 0; transition: opacity 0.5s;
+        #pxpop {
+            position:fixed; z-index:3500; background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            min-width:250px; pointer-events:none; opacity:0; transform:scale(0.92); transition:0.12s;
         }
-
-        /* Pixel popup */
-        #pixel-popup {
-            position: fixed; z-index: 3500;
-            background: rgba(8,8,20,0.97);
-            border: 1px solid var(--accent);
-            border-radius: 14px; padding: 14px 17px;
-            min-width: 240px; max-width: 300px;
-            pointer-events: none;
-            opacity: 0; transform: scale(0.92) translateY(-4px);
-            transition: opacity 0.2s, transform 0.2s;
-            box-shadow: 0 6px 28px rgba(74,158,255,0.2);
-        }
-        #pixel-popup.visible {
-            opacity: 1; transform: scale(1) translateY(0);
-            pointer-events: auto;
-        }
-        #pp-close {
-            position: absolute; top: 9px; right: 13px;
-            font-size: 1rem; color: var(--text-muted);
-            cursor: pointer; line-height: 1;
-        }
-        #pp-close:hover { color: #fff; }
-        #pixel-popup h3 {
-            font-size: 0.82rem; color: var(--accent);
-            margin-bottom: 11px; font-weight: 600;
-        }
-        .pp-row {
-            display: flex; align-items: center; gap: 10px;
-            margin-bottom: 8px;
-        }
-        .pp-swatch {
-            width: 22px; height: 22px; border-radius: 5px;
-            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15);
-        }
-        .pp-name { color: var(--text-primary); font-weight: 500; font-size: 0.82rem; }
-        .pp-val  { color: var(--text-secondary); font-size: 0.73rem; margin-top: 2px; }
-        .pp-coords {
-            margin-top: 10px; padding-top: 8px;
-            border-top: 1px solid var(--border);
-            font-size: 0.68rem; color: var(--text-muted);
-        }
-        #pp-empty { color: var(--text-muted); font-size: 0.77rem; padding: 4px 0; }
+        #pxpop.visible { opacity:1; transform:scale(1); pointer-events:auto; }
+        #pxpop .pbody { padding:6px 10px; }
+        .pp-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+        .pp-swatch { width:36px; height:22px; flex-shrink:0; border:2px inset #808080; }
+        .pp-coords { margin-top:6px; padding-top:5px; border-top:1px solid var(--dark); font-size:10px; color:var(--darker); font-family:'Courier New',monospace; }
 
         #toast {
-            position: fixed; bottom: calc(var(--timeline-h) + 80px);
-            left: 50%; transform: translateX(-50%);
-            background: rgba(74,158,255,0.13); border: 1px solid var(--accent);
-            color: var(--accent); border-radius: 20px;
-            padding: 7px 18px; font-size: 0.8rem;
-            z-index: 4000; pointer-events: none;
-            opacity: 0; transition: opacity 0.3s;
+            position:fixed; bottom:calc(var(--timeline-h) + 65px); left:50%;
+            transform:translateX(-50%); background:#ffffcc; border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            font-weight:bold; padding:5px 14px; font-size:11px; z-index:4000;
+            pointer-events:none; opacity:0; transition:0.3s;
         }
-        #toast.show { opacity: 1; }
+        #toast.show { opacity:1; }
 
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .modal-overlay {
+            position:fixed; top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,0.4); z-index:6000;
+            display:none; align-items:center; justify-content:center;
+        }
+        .modal-overlay.open { display:flex; }
+        .modal-win {
+            background:var(--bg); border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            min-width:360px; max-width:500px; max-height:80vh;
+        }
+        .modal-title {
+            background:var(--navy); color:#fff; font-weight:bold;
+            padding:3px 5px; display:flex; justify-content:space-between; align-items:center;
+        }
+        .modal-body { padding:10px; overflow-y:auto; max-height:65vh; }
+        .modal-body .row {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:6px; gap:6px;
+        }
+        .modal-body label { font-weight:bold; font-size:11px; min-width:110px; }
+        .modal-body select, .modal-body input { border:2px inset #808080; background:#fff; padding:3px 5px; font-size:11px; font-family:inherit; }
+        .modal-body .val { min-width:40px; text-align:center; font-weight:bold; }
+        .modal-body h4 {
+            font-size:10px; text-transform:uppercase; color:var(--navy);
+            margin:8px 0 4px; padding-top:6px; border-top:2px groove #808080; font-weight:bold;
+        }
+        .modal-body h4:first-of-type { border-top:none; margin-top:0; padding-top:0; }
 
-        .leaflet-container { background: #060610 !important; }
+        .leaflet-container { background:#808080 !important; }
+        .leaflet-control-zoom {
+            border:2px solid !important;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter) !important;
+        }
         .leaflet-control-zoom a {
-            background: var(--bg-card) !important;
-            color: var(--text-secondary) !important;
-            border-color: var(--border) !important;
+            background:var(--bg) !important; color:#000 !important; border:none !important;
+            border-bottom:1px solid var(--dark) !important;
+            font-family:'MS Sans Serif',sans-serif !important; font-weight:bold !important;
+            font-size:14px !important; width:24px !important; height:24px !important; line-height:24px !important;
         }
-        .leaflet-control-zoom a:hover { background: #1a1a32 !important; color: #fff !important; }
+        .leaflet-control-zoom a:last-child { border-bottom:none !important; }
         .leaflet-control-attribution {
-            background: rgba(8,8,16,0.85) !important;
-            color: var(--text-muted) !important; font-size: 0.58rem;
+            background:var(--bg) !important; color:#000 !important; font-size:8px;
+            border:2px solid;
+            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
         }
-        .leaflet-control-attribution a { color: #666 !important; }
 
-        @media (max-width:700px) {
-            :root { --header-h:104px; --timeline-h:56px; }
-            #header { flex-wrap:wrap; height:var(--header-h); padding:6px 10px; gap:6px; align-content:center; }
-            .select-wrap label { display:none; }
-            #legend-wrap { display:none; }
-            .tl-btn { padding:6px 8px; font-size:0.76rem; }
+        .leaflet-tile {
+            border: none !important;
+            outline: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.12} }
+
+        @media (max-width:850px) {
+            :root { --header-h:94px; --timeline-h:54px; }
+            #toolbar { flex-wrap:wrap; height:var(--header-h); padding:2px; gap:2px; }
+            .sep { display:none; }
+            #legend-panel { display:none; }
         }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div class="logo">🌧️ RainRadar <span>Pro</span></div>
-    <div id="timestamp-pill">⏱ загрузка...</div>
+<div id="login-screen">
+    <div class="login-box">
+        <h2>KAROLA - ВХОД</h2>
+        <input type="text" id="login-input" placeholder="Введите имя пользователя..." maxlength="30">
+        <button class="wbtn hi" id="login-btn" style="width:100%;">ВОЙТИ</button>
+    </div>
+</div>
 
-    <div id="layer-switcher">
-        <button class="layer-btn active-radar" id="btn-layer-radar">🌧 Осадки (дБЗ)</button>
-        <button class="layer-btn" id="btn-layer-wx">⛈ Явления</button>
+<div id="titlebar"><span class="tb-text">KAROLA</span><div class="tb-btns"><span class="tb-btn">_</span><span class="tb-btn">&#x25A1;</span><span class="tb-btn">X</span></div></div>
+
+<div id="menubar">
+    <span class="mbar-item" data-menu="menu-file">Файл</span>
+    <span class="mbar-item" data-menu="menu-view">Вид</span>
+    <span class="mbar-item" data-menu="menu-tools">Инструменты</span>
+
+    <div class="mbar-dropdown" id="menu-file">
+        <div class="mitem" data-action="export-config">Экспорт настроек...</div>
+        <div class="mitem" data-action="import-config">Импорт настроек...</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="screenshot">Сделать скриншот</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="copy-link">Копировать ссылку</div>
+        <div class="mitem" data-action="copy-coords">Копировать координаты</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="reset-all">Сбросить всё</div>
     </div>
 
-    <div class="spacer"></div>
+    <div class="mbar-dropdown" id="menu-view">
+        <div class="mitem" data-action="basemap-carto"><span class="check" id="chk-carto">&#x2713;</span>CARTO Light</div>
+        <div class="mitem" data-action="basemap-osm"><span class="check" id="chk-osm"></span>OpenStreetMap</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="toggle-labels"><span class="check" id="chk-labels">&#x2713;</span>Подписи городов</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="night-mode"><span class="check" id="chk-night"></span>Ночной режим</div>
+        <div class="mitem" data-action="grayscale-mode"><span class="check" id="chk-gray"></span>Чёрно-белый</div>
+        <div class="mitem" data-action="superres-mode"><span class="check" id="chk-superres">&#x2713;</span>SuperRes (сглаживание)</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="toggle-legend"><span class="check" id="chk-legend">&#x2713;</span>Легенда</div>
+        <div class="mitem" data-action="reset-view">Сбросить вид карты</div>
+    </div>
 
-    <div class="select-wrap">
-        <label>Пиксель</label>
-        <select id="sel-pixel">
-            <option value="1">1×1</option>
-            <option value="2" selected>2×2</option>
-            <option value="3">3×3</option>
-            <option value="4">4×4</option>
-            <option value="6">6×6</option>
-            <option value="8">8×8</option>
+    <div class="mbar-dropdown" id="menu-tools">
+        <div class="mitem" data-action="inspect"><span class="check" id="chk-inspect"></span>Инспектор пикселей</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="geolocate">Геолокация</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="calculator">Калькулятор</div>
+        <div class="mitem" data-action="converter">Конвертер единиц</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="advanced">Расширенные настройки...</div>
+        <div class="msep"></div>
+        <div class="mitem" data-action="clear-cache">Очистить кеш тайлов</div>
+        <div class="mitem" data-action="reload">Перезагрузить данные</div>
+    </div>
+</div>
+
+<div id="profile-badge" title="Профиль"><span id="profile-name">Гость</span></div>
+
+<div id="toolbar">
+    <div id="timebox">ЗАГРУЗКА...</div><div class="sep"></div>
+    <div class="layer-sw">
+        <button class="sel" id="lbtn-radar">ОСАДКИ dBZ</button>
+        <button id="lbtn-wx">ЯВЛЕНИЯ</button>
+    </div><div class="sep"></div>
+    <div class="px-group">
+        <label>ПИКСЕЛЬ:</label>
+        <select id="px-select" style="border:2px inset #808080;background:#fff;padding:3px 5px;font-size:11px;font-family:inherit;">
+            <option value="1" selected>2x2</option><option value="2">4x4</option><option value="3">8x8</option>
+            <option value="4">16x16</option><option value="5">32x32</option><option value="6">64x64</option>
         </select>
-    </div>
-
-    <div class="select-wrap">
-        <label>Яркость</label>
-        <input type="range" id="sl-opacity" min="20" max="100" value="85" step="5">
-        <span class="val-badge" id="opacity-val">85%</span>
-    </div>
-
-    <button class="btn" id="btn-inspect">🔍 Инспектор</button>
-    <button class="btn" id="btn-locate">📍 Геолокация</button>
-    <button class="btn" id="btn-reset">🗺 Сбросить</button>
+    </div><div class="sep"></div>
+    <button class="wbtn" id="btn-night">НОЧЬ</button>
+    <button class="wbtn" id="btn-inspect">ИНСПЕКТОР</button>
+    <button class="wbtn" id="btn-screenshot">СКРИН</button>
+    <button class="wbtn" id="btn-locate">МОЁ МЕСТО</button>
+    <button class="wbtn" id="btn-refresh">ОБНОВИТЬ</button>
+    <button class="wbtn" id="btn-reset">СБРОС</button>
 </div>
 
-<div id="map"></div>
+<div id="mapbox"><div id="map"></div></div>
 
-<div class="panel" id="legend-wrap">
-    <div id="legend-content"></div>
+<div id="statusbar">
+    <span class="st-dot busy" id="st-dot"></span>
+    <span id="st-txt" style="font-weight:bold;">ЗАГРУЗКА...</span>
+    <span style="flex:1;"></span>
+    <span id="st-coords" style="font-family:'Courier New',monospace;"></span>
 </div>
 
-<div class="panel" id="status">
-    <span class="dot loading" id="status-dot"></span>
-    <span id="status-text">Загрузка...</span>
+<div class="panel" id="legend-panel">
+    <div class="ptitle"><span>ЛЕГЕНДА</span></div>
+    <div class="pbody" id="legend-body"></div>
 </div>
 
-<div class="panel" id="inspect-badge">🔍 Кликните по карте — узнайте интенсивность</div>
-<div class="panel" id="zoom-hint"></div>
-
-<div id="pixel-popup">
-    <span id="pp-close">✕</span>
-    <h3 id="pp-title">📊 Интенсивность</h3>
-    <div id="pp-main-row" class="pp-row">
-        <div class="pp-swatch" id="pp-swatch"></div>
-        <div>
-            <div class="pp-name" id="pp-name">—</div>
-            <div class="pp-val"  id="pp-val">—</div>
-        </div>
+<div id="pxpop">
+    <div class="ptitle"><span id="pp-title">ИНТЕНСИВНОСТЬ</span><span class="tb-btn" id="pp-close" style="cursor:pointer;">X</span></div>
+    <div class="pbody">
+        <div id="pp-row" class="pp-row"><div class="pp-swatch" id="pp-swatch"></div><div><div class="pp-name" id="pp-name">---</div><div class="pp-val" id="pp-val">---</div></div></div>
+        <div id="pp-empty" style="display:none;color:var(--darker);">[ Нет данных ]</div>
+        <div class="pp-coords" id="pp-coords"></div>
     </div>
-    <div id="pp-empty" style="display:none">Нет данных в этой точке</div>
-    <div class="pp-coords" id="pp-coords"></div>
 </div>
 
 <div id="toast"></div>
 
-<div id="timeline">
-    <button class="tl-btn" id="btn-p60">◀◀ −1ч</button>
-    <button class="tl-btn" id="btn-p30">◀ −30м</button>
-    <button class="tl-btn" id="btn-p10">−10м</button>
-    <button id="play-btn">▶</button>
-    <button class="tl-btn" id="btn-n10">+10м</button>
-    <button class="tl-btn" id="btn-n30">+30м ▶</button>
-    <button class="tl-btn primary" id="btn-now">📡 Сейчас</button>
-    <div id="timeline-track">
-        <div id="timeline-fill"></div>
-        <div id="timeline-thumb"></div>
-        <div class="tl-labels" id="tl-labels"></div>
+<div class="modal-overlay" id="modal-advanced">
+    <div class="modal-win">
+        <div class="modal-title"><span>РАСШИРЕННЫЕ НАСТРОЙКИ</span><span class="tb-btn" id="modal-close" style="cursor:pointer;">X</span></div>
+        <div class="modal-body">
+            <h4>ОТОБРАЖЕНИЕ</h4>
+            <div class="row"><label>Гамма:</label><input type="range" id="set-gamma" min="50" max="200" value="100" step="5"><span class="val" id="val-gamma">1.00</span></div>
+            <div class="row"><label>Прозрачность:</label><input type="range" id="set-opacity" min="20" max="100" value="65" step="5"><span class="val" id="val-opacity">65%</span></div>
+            <div class="row"><label>SuperRes:</label><select id="set-superres"><option value="0">Выкл</option><option value="1">x2</option><option value="2" selected>x3</option><option value="3">x4</option><option value="4">x6</option></select></div>
+            <div class="row"><label>Сглаживание:</label><select id="set-smooth"><option value="0">Выкл</option><option value="1" selected>Лёгкое</option><option value="2">Среднее</option><option value="3">Сильное</option></select></div>
+            <div class="row"><label>Резкость:</label><input type="range" id="set-sharpen" min="0" max="100" value="25" step="5"><span class="val" id="val-sharpen">25%</span></div>
+            <button class="wbtn hi" id="btn-apply-adv" style="width:100%;margin-top:10px;">ПРИМЕНИТЬ</button>
+        </div>
     </div>
-    <span id="speed-badge">🎞 1×</span>
+</div>
+
+<div class="modal-overlay" id="modal-profile">
+    <div class="modal-win" style="min-width:300px;">
+        <div class="modal-title"><span>ПРОФИЛЬ</span><span class="tb-btn" id="profile-close" style="cursor:pointer;">X</span></div>
+        <div class="modal-body" style="text-align:center;">
+            <div style="font-size:14px;font-weight:bold;margin-bottom:8px;" id="profile-username"></div>
+            <div style="font-family:'Courier New',monospace;font-size:11px;color:var(--darker);">UID: <span id="profile-uid"></span></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-calc">
+    <div class="modal-win" style="min-width:280px;">
+        <div class="modal-title"><span>КАЛЬКУЛЯТОР</span><span class="tb-btn" id="calc-close" style="cursor:pointer;">X</span></div>
+        <div class="modal-body">
+            <div class="row"><input type="text" id="calc-display" style="width:100%;font-size:16px;text-align:right;font-family:'Courier New',monospace;" value="0" readonly></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+                <button class="wbtn calc-btn">7</button><button class="wbtn calc-btn">8</button><button class="wbtn calc-btn">9</button><button class="wbtn calc-btn">/</button>
+                <button class="wbtn calc-btn">4</button><button class="wbtn calc-btn">5</button><button class="wbtn calc-btn">6</button><button class="wbtn calc-btn">*</button>
+                <button class="wbtn calc-btn">1</button><button class="wbtn calc-btn">2</button><button class="wbtn calc-btn">3</button><button class="wbtn calc-btn">-</button>
+                <button class="wbtn calc-btn">0</button><button class="wbtn calc-btn">.</button><button class="wbtn hi calc-btn">=</button><button class="wbtn calc-btn">+</button>
+            </div>
+            <button class="wbtn" id="calc-clear" style="width:100%;margin-top:4px;">C</button>
+        </div>
+    </div>
+</div>
+
+<div id="timeline">
+    <button class="wbtn" id="btn-p60"><< -1ч</button>
+    <button class="wbtn" id="btn-p30">< -30м</button>
+    <button class="wbtn" id="btn-p10">-10м</button>
+    <button id="playbtn">&#x25B6;</button>
+    <button class="wbtn" id="btn-n10">+10м</button>
+    <button class="wbtn" id="btn-n30">+30м ></button>
+    <button class="wbtn hi" id="btn-now">СЕЙЧАС</button>
+    <div id="track"><div id="trackfill"></div><div id="trackthumb"></div><div class="tl-lbls" id="tl-lbls"></div></div>
+    <span id="speedbadge">1x</span>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-(function () {
+(function() {
     'use strict';
 
-    // ════════════════════════════════════════════
-    //  CONFIG
-    // ════════════════════════════════════════════
-    const CFG = {
-        radarDelay:     600,
-        maxNativeZoom:  5,
-        maxDisplayZoom: 10,
-        defaultCenter:  [58.141, 60.866],
-        defaultZoom:    5,
-        dbzBoost:       5,
-        minDbz:         5,
-        tileBase:       'https://rainradar.ru/composite',
-        timelineHours:  3,
-        animSpeeds:     [1, 2, 4],
-        animFrameMs:    900,
-        cacheMax:       150,
+    let userName = localStorage.getItem('karola_user') || null;
+    let userUID = localStorage.getItem('karola_uid') || null;
+    
+    function showLogin() { document.getElementById('login-screen').style.display = 'flex'; }
+    function hideLogin() { document.getElementById('login-screen').style.display = 'none'; }
+    
+    if(!userName || !userUID) { showLogin(); }
+    else {
+        hideLogin();
+        document.getElementById('profile-name').textContent = userName;
+        document.getElementById('profile-username').textContent = userName;
+        document.getElementById('profile-uid').textContent = userUID;
+    }
+    
+    document.getElementById('login-btn').addEventListener('click', doLogin);
+    document.getElementById('login-input').addEventListener('keydown', function(e) { if(e.key === 'Enter') doLogin(); });
+    
+    function doLogin() {
+        const input = document.getElementById('login-input');
+        const name = input.value.trim();
+        if(!name) { alert('Введите имя!'); return; }
+        userName = name;
+        userUID = Math.floor(Math.random() * 900000) + 100000;
+        localStorage.setItem('karola_user', userName);
+        localStorage.setItem('karola_uid', userUID);
+        document.getElementById('profile-name').textContent = userName;
+        document.getElementById('profile-username').textContent = userName;
+        document.getElementById('profile-uid').textContent = userUID;
+        hideLogin();
+        showToast('ДОБРО ПОЖАЛОВАТЬ, ' + userName.toUpperCase() + '!');
+    }
+
+    document.getElementById('profile-badge').addEventListener('click', ()=>{
+        document.getElementById('profile-username').textContent = userName;
+        document.getElementById('profile-uid').textContent = userUID;
+        document.getElementById('modal-profile').classList.add('open');
+    });
+    document.getElementById('profile-close').addEventListener('click', ()=>document.getElementById('modal-profile').classList.remove('open'));
+    document.getElementById('modal-profile').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('open'); });
+
+    const DEF = {
+        radarDelay: 600, maxNativeZoom: 5,
+        defaultCenter: [57.5, 55], defaultZoom: 5,
+        tileBase: 'https://rainradar.ru/composite',
+        timelineHours: 3, animSpeeds: [1,2,4], animFrameMs: 800,
     };
 
-    // ════════════════════════════════════════════
-    //  РАДАРНАЯ ПАЛИТРА (дБЗ → цвет)
-    // ════════════════════════════════════════════
-    const RADAR_PALETTE = [
-        { v:80, rgb:[0,  0,  0  ], label:'≥80 дБЗ', desc:'Экстремальные' },
-        { v:75, rgb:[80, 40, 10 ], label:'75 дБЗ',  desc:'Очень сильные' },
-        { v:65, rgb:[139,69, 19 ], label:'65 дБЗ',  desc:'Сильные'       },
-        { v:55, rgb:[180,0,  0  ], label:'55 дБЗ',  desc:'Интенсивные'   },
-        { v:50, rgb:[255,0,  0  ], label:'50 дБЗ',  desc:'Сильный ливень'},
-        { v:45, rgb:[255,100,0  ], label:'45 дБЗ',  desc:'Ливень'        },
-        { v:40, rgb:[255,165,0  ], label:'40 дБЗ',  desc:'Умеренный'     },
-        { v:30, rgb:[251,255,3  ], label:'30 дБЗ',  desc:'Слабый ливень' },
-        { v:25, rgb:[3,  57, 255], label:'25 дБЗ',  desc:'Слабый'        },
-        { v:20, rgb:[3,  209,255], label:'20 дБЗ',  desc:'Очень слабый'  },
-        { v:15, rgb:[0,  200,0  ], label:'15 дБЗ',  desc:'Морось'        },
-        { v:10, rgb:[0,  255,100], label:'10 дБЗ',  desc:'Туман/морось'  },
-        { v:6,  rgb:[153,255,51 ], label:'6 дБЗ',   desc:'Едва заметно'  },
-    ];
-
-    function dbzToRadarEntry(dbz) {
-        if (dbz < CFG.minDbz) return null;
-        for (const p of RADAR_PALETTE) if (dbz >= p.v) return p;
-        return null;
-    }
-
-    // ════════════════════════════════════════════
-    //  ПАЛИТРА ЯВЛЕНИЙ (дБЗ → явление)
-    //
-    //  Та же исходная яркость пикселя = дБЗ,
-    //  но раскрашиваем по шкале явлений:
-    //
-    //  6–14   → осадки слабые
-    //  15–24  → осадки умеренные
-    //  25–34  → осадки сильные
-    //  35–39  → ливень слабый
-    //  40–44  → ливень умеренный
-    //  45–49  → ливень сильный
-    //  50–54  → гроза 30%
-    //  55–59  → гроза 50-70%
-    //  60–64  → гроза 70-100%
-    //  65–67  → град слабый
-    //  68–71  → град умеренный
-    //  72–75  → град сильный
-    //  76–78  → шквал слабый
-    //  79–79  → шквал умеренный
-    //  80+    → шквал сильный
-    // ════════════════════════════════════════════
-    const WX_PALETTE = [
-        // Осадки
-        {
-            id:'cloud', group:'Обласность',
-            label:'Облачность',   emoji:'☁️',
-            rgb:[153, 153, 153],        // светло-зелёный
-            minDbz:6,  maxDbz:10,
-        },
-        {
-            id:'rain_w', group:'Осадки',
-            label:'Осадки слабые',   emoji:'🌦',
-            rgb:[140, 255, 138],        // светло-зелёный
-            minDbz:11,  maxDbz:19,
-        },
-        {
-            id:'rain_m', group:'Осадки',
-            label:'Осадки умеренные', emoji:'🌧',
-            rgb:[4, 255, 0],        // зелёный
-            minDbz:20, maxDbz:24,
-        },
-        {
-            id:'rain_h', group:'Осадки',
-            label:'Осадки сильные',   emoji:'🌧',
-            rgb:[7, 156, 5],        // тёмно-зелёный
-            minDbz:25, maxDbz:34,
-        },
-        // Ливень
-        {
-            id:'shower_w', group:'Ливень',
-            label:'Ливень слабый',    emoji:'🌦',
-            rgb:[117, 188, 255],        // светло-синий
-            minDbz:35, maxDbz:39,
-        },
-        {
-            id:'shower_m', group:'Ливень',
-            label:'Ливень умеренный', emoji:'🌧',
-            rgb:[0, 125, 242],        // синий
-            minDbz:40, maxDbz:44,
-        },
-        {
-            id:'shower_h', group:'Ливень',
-            label:'Ливень сильный',   emoji:'⛈',
-            rgb:[0, 75, 145],        // тёмно-синий
-            minDbz:45, maxDbz:49,
-        },
-        // Гроза
-        {
-            id:'storm_30', group:'Гроза',
-            label:'Гроза ~30%',       emoji:'⛈',
-            rgb:[255, 238, 176],        // бежевый
-            minDbz:50, maxDbz:54,
-        },
-        {
-            id:'storm_50', group:'Гроза',
-            label:'Гроза 50–70%',     emoji:'⛈',
-            rgb:[255, 131, 122, 1],        // розово-красный
-            minDbz:55, maxDbz:59,
-        },
-        {
-            id:'storm_70', group:'Гроза',
-            label:'Гроза 70–100%',    emoji:'🌩',
-            rgb:[255, 0, 0, 1],        // красный
-            minDbz:60, maxDbz:64,
-        },
-        // Град
-        {
-            id:'hail_w', group:'Град',
-            label:'Град слабый',      emoji:'🌨',
-            rgb:[255, 153, 0, 1],        // светло-коричневый (tan)
-            minDbz:65, maxDbz:67,
-        },
-        {
-            id:'hail_m', group:'Град',
-            label:'Град умеренный',   emoji:'🌨',
-            rgb:[184, 110, 0, 1],        // коричневый
-            minDbz:68, maxDbz:71,
-        },
-        {
-            id:'hail_h', group:'Град',
-            label:'Град сильный',     emoji:'🌨',
-            rgb:[105, 63, 1, 1],        // тёмно-коричневый
-            minDbz:72, maxDbz:75,
-        },
-        // Шквал
-        {
-            id:'squall_w', group:'Шквал',
-            label:'Шквал слабый',     emoji:'💨',
-            rgb:[255, 127, 234, 1],        // светло-фиолетовый
-            minDbz:76, maxDbz:77,
-        },
-        {
-            id:'squall_m', group:'Шквал',
-            label:'Шквал умеренный',  emoji:'💨',
-            rgb:[255, 0, 213, 1],        // пурпурный
-            minDbz:78, maxDbz:79,
-        },
-        {
-            id:'squall_h', group:'Шквал',
-            label:'Шквал сильный',    emoji:'🌪',
-            rgb:[153, 0, 127, 1],        // тёмно-фиолетовый
-            minDbz:80, maxDbz:999,
-        },
-    ];
-
-    // Получить явление по дБЗ
-    function dbzToWxEntry(dbz) {
-        if (dbz < CFG.minDbz) return null;
-        for (const p of WX_PALETTE) {
-            if (dbz >= p.minDbz && dbz <= p.maxDbz) return p;
-        }
-        return null;
-    }
-
-    // Обратный поиск — по RGB найти запись WX (для инспектора)
-    function rgbToWxEntry(r, g, b) {
-        let best = null, bd = Infinity;
-        for (const p of WX_PALETTE) {
-            const d = Math.sqrt((r-p.rgb[0])**2+(g-p.rgb[1])**2+(b-p.rgb[2])**2);
-            if (d < bd) { bd = d; best = p; }
-        }
-        return bd <= 50 ? best : null;
-    }
-
-    // Обратный поиск — по RGB найти запись Radar (для инспектора)
-    function rgbToRadarEntry(r, g, b) {
-        let best = null, bd = Infinity;
-        for (const p of RADAR_PALETTE) {
-            const d = Math.sqrt((r-p.rgb[0])**2+(g-p.rgb[1])**2+(b-p.rgb[2])**2);
-            if (d < bd) { bd = d; best = p; }
-        }
-        return bd <= 60 ? best : null;
-    }
-
-    // ════════════════════════════════════════════
-    //  STATE
-    // ════════════════════════════════════════════
-    const state = {
-        timestamp:   0,
-        pixelSize:   2,
-        opacity:     0.85,
-        activeLayer: 'radar',   // 'radar' | 'wx'
-        inspectMode: false,
-        playing:     false,
-        speedIdx:    0,
-        animTimer:   null,
-        animFrame:   0,
-        animFrames:  [],
-        tileCache:   new Map(),
-        loadingTiles:0,
+    const S = {
+        ts: 0, pixel: 1, opacity: 0.65, contrast: 0, gamma: 1.0,
+        boost: 0, minDbz: 5, layer: 'radar', inspect: false,
+        playing: false, speedI: 0, timer: null, frameI: 0,
+        frames: [], cache: new Map(), failed: new Set(), loading: 0,
+        cacheMax: 600, keepBuffer: 8, basemap: 'carto',
+        minZoom: 3, maxZoom: 10, nightMode: false, grayscale: false,
+        labelsVisible: true, legendVisible: true, pendingTiles: new Set(),
+        frameVersion: 0, renderQueue: [], isRendering: false,
+        superRes: 2, smoothLevel: 1, sharpen: 25, forceRefresh: 0,
     };
 
-    function nowTs() {
-        return Math.floor((Date.now()/1000 - CFG.radarDelay) / 600) * 600;
-    }
-    state.timestamp = nowTs();
+    function nowTs() { return Math.floor((Date.now()/1000 - DEF.radarDelay)/600)*600; }
+    S.ts = nowTs();
 
-    // ════════════════════════════════════════════
-    //  MAP
-    // ════════════════════════════════════════════
+    const RADAR_PAL = [
+        {v:80, r:[255,0,255], l:'80+ dBZ', d:'ТОРНАДО'},
+        {v:70, r:[200,0,0], l:'70 dBZ', d:'Шквал сильный'},
+        {v:69, r:[220,50,50], l:'69 dBZ', d:'Шквал умеренный'},
+        {v:67, r:[240,100,100], l:'67 dBZ', d:'Шквал слабый'},
+        {v:65, r:[180,0,180], l:'65 dBZ', d:'Град сильный'},
+        {v:63, r:[200,50,200], l:'63 dBZ', d:'Град умеренный'},
+        {v:60, r:[220,100,220], l:'60 dBZ', d:'Град слабый'},
+        {v:55, r:[255,0,0], l:'55 dBZ', d:'Гроза 100%'},
+        {v:50, r:[255,100,0], l:'43 dBZ', d:'Гроза 70%'},
+        {v:40, r:[255,200,0], l:'40 dBZ', d:'Гроза 30%'},
+        {v:35, r:[0,100,255], l:'35 dBZ', d:'Сильный ливень'},
+        {v:30, r:[0,150,255], l:'30 dBZ', d:'Умеренный ливень'},
+        {v:25, r:[0,200,255], l:'25 dBZ', d:'Слабый ливень'},
+        {v:23, r:[255,50,50], l:'20 dBZ', d:'Сильные осадки'},
+        {v:20, r:[255,150,50], l:'10 dBZ', d:'Умеренные осадки'},
+        {v:15, r:[112,255,126], l:'4 dBZ', d:'Слабые осадки'},
+        {v:6, r:[153,255,51], l:'3 dBZ', d:'Облачность, туман'},
+];
+
+    const WX_PAL = [
+        {g:'ОБЛАЧНОСТЬ', l:'Облачность, туман', r:[135, 135, 135], a:6, b:14},
+        {g:'ОСАДКИ', l:'Слабые осадки', r:[102, 255, 117], a:15, b:19},
+        {g:'ОСАДКИ', l:'Умеренные осадки', r:[0, 207, 21], a:20, b:22},
+        {g:'ОСАДКИ', l:'Сильные осадки', r:[0, 135, 14], a:23, b:24},
+        {g:'ЛИВЕНЬ', l:'Слабый ливень', r:[54, 51, 255], a:25, b:29},
+        {g:'ЛИВЕНЬ', l:'Умеренный ливень', r:[3, 0, 166], a:30, b:34},
+        {g:'ЛИВЕНЬ', l:'Сильный ливень', r:[7, 6, 112], a:35, b:39},
+        {g:'ГРОЗА', l:'Гроза 30%', r:[255, 202, 97], a:40, b:49},
+        {g:'ГРОЗА', l:'Гроза 70%', r:[255, 97, 97], a:50, b:54},
+        {g:'ГРОЗА', l:'Гроза 100%', r:[255, 0, 0], a:55, b:59},
+        {g:'ГРАД', l:'Град слабый', r:[127, 68, 0], a:60, b:62},
+        {g:'ГРАД', l:'Град умеренный', r:[84, 45, 0], a:63, b:64},
+        {g:'ГРАД', l:'Град сильный', r:[0, 0, 0], a:65, b:66},
+        {g:'ШКВАЛ', l:'Шквал слабый', r:[255, 125, 242], a:67, b:68},
+        {g:'ШКВАЛ', l:'Шквал умеренный', r:[252, 0, 227], a:69, b:69},
+        {g:'ШКВАЛ', l:'Шквал сильный', r:[156, 0, 140], a:70, b:79},
+        {g:'ТОРНАДО', l:'ТОРНАДО', r:[255, 255, 255], a:80, b:999},
+];
+
+
+    function dbzRadar(dbz){if(dbz<S.minDbz)return null;for(const p of RADAR_PAL)if(dbz>=p.v)return p;return null;}
+    function dbzWx(dbz){if(dbz<S.minDbz)return null;for(const p of WX_PAL)if(dbz>=p.a&&dbz<=p.b)return p;return null;}
+
+    const BASEMAPS = {
+        carto: { url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', attr:'(c) CARTO', sub:['a','b','c','d'], maxZ:20 },
+        osm: { url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attr:'(c) OSM', sub:[], maxZ:19 },
+    };
+
     const map = L.map('map', {
-        center: CFG.defaultCenter, zoom: CFG.defaultZoom,
-        maxZoom: CFG.maxDisplayZoom, zoomControl: true,
+        center: DEF.defaultCenter, zoom: DEF.defaultZoom,
+        maxZoom: S.maxZoom, minZoom: S.minZoom,
+        zoomControl: true, worldCopyJump: true, fadeAnimation: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© <a href="https://carto.com/">CARTO</a>',
-        subdomains: 'abcd', maxZoom: CFG.maxDisplayZoom,
+    let baseLayer = L.tileLayer(BASEMAPS[S.basemap].url, {
+        attribution: BASEMAPS[S.basemap].attr + ' | KAROLA',
+        subdomains: BASEMAPS[S.basemap].sub,
+        maxZoom: BASEMAPS[S.basemap].maxZ || S.maxZoom,
+        minZoom: S.minZoom, noWrap: false,
     }).addTo(map);
 
-    // ════════════════════════════════════════════
-    //  TILE CACHE
-    // ════════════════════════════════════════════
-    function cKey(type, ts, z, x, y) { return `${type}|${ts}|${z}|${x}|${y}`; }
-    function cGet(k) { return state.tileCache.get(k) || null; }
-    function cSet(k, cv) {
-        if (state.tileCache.size >= CFG.cacheMax)
-            state.tileCache.delete(state.tileCache.keys().next().value);
-        state.tileCache.set(k, cv);
+    const labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        subdomains: ['a','b','c','d'], maxZoom: 20, opacity: 1, minZoom: S.minZoom,
+    });
+    if(S.labelsVisible) labelsLayer.addTo(map);
+
+    // ---------- КРУГИ АЭРОПОРТОВ (250 км, чёрный контур, без заливки, opacity 0.5) ----------
+    const airports = [
+        { name: "Внуково (Москва)", lat: 55.5917, lng: 37.2611 },
+        { name: "Борщево (Воронеж)", lat: 51.8161, lng: 39.2297 },
+        { name: "Гумрак (Волгоград)", lat: 48.7825, lng: 44.3461 },
+        { name: "Шпаковское (Ставрополь)", lat: 45.1092, lng: 42.1128 },
+        { name: "Мин. Воды", lat: 44.2250, lng: 43.0833 },
+        { name: "Сочи", lat: 43.4500, lng: 39.9567 },
+        { name: "Павлодар (Казахстан)", lat: 52.1947, lng: 77.0739 },
+        { name: "Астана", lat: 51.0222, lng: 71.4669 },
+        { name: "Талдыкорган", lat: 45.1260, lng: 78.4370 },
+        { name: "Алматы", lat: 43.3521, lng: 77.0405 },
+        { name: "Караганда (Сары-Арка)", lat: 49.6708, lng: 73.3344 },
+        { name: "Актау", lat: 43.8600, lng: 51.0919 },
+        { name: "Тараз", lat: 42.8536, lng: 71.3036 },
+        { name: "Пашковский (Краснодар)", lat: 45.0347, lng: 39.1705 },
+        { name: "Уфа", lat: 54.5575, lng: 55.8742 },
+        { name: "Минск", lat: 53.8825, lng: 28.0308 },
+        { name: "Могилёв", lat: 53.9549, lng: 30.0951 },
+        { name: "Брест", lat: 52.1083, lng: 23.8981 },
+        { name: "Смоленск", lat: 54.823, lng: 32.028 },
+        { name: "Псков", lat: 57.7833, lng: 28.3950 },
+        { name: "Казань", lat: 55.6083, lng: 49.2744 },
+        { name: "Тюмень", lat: 57.1897, lng: 65.3270 },
+        { name: "Толмачёво (Новосибирск)", lat: 55.0126, lng: 82.6507 },
+        { name: "Челябинск", lat: 55.3058, lng: 61.5033 },
+        { name: "Пермь", lat: 57.9147, lng: 56.0263 },
+        { name: "Самара", lat: 53.5047, lng: 50.1647 },
+        { name: "Саранск", lat: 54.1258, lng: 45.2158 },
+        { name: "Саратов", lat: 51.5650, lng: 46.0467 },
+        { name: "Тамбов", lat: 52.8061, lng: 41.4828 },
+        { name: "Нижний Новгород", lat: 56.2300, lng: 43.7850 },
+        { name: "Вологда", lat: 59.2825, lng: 39.9444 },
+        { name: "Санкт-Петербург (Пулково)", lat: 59.8003, lng: 30.2625 },
+        { name: "Санкт-Петербург (Пулково)", lat: 53.222865, lng: 63.543034 },
+        { name: "Усть-Каменогорск (Устькаман)", lat: 50.024726, lng: 82.514019 }
+    ];
+
+    airports.forEach(ap => {
+        L.circle([ap.lat, ap.lng], {
+            radius: 250000,          // 250 км
+            color: '#000000',        // чёрный контур
+            opacity: 0.3,            // прозрачность контура 50%
+            fillOpacity: 0,          // без заливки
+            weight: 2.5,
+            interactive: true       // не мешает кликам
+        }).addTo(map);
+    });
+    // ---------------------------------------------------------------------------------
+
+    function switchBasemap(type) {
+        if(S.basemap === type) return;
+        S.basemap = type;
+        map.removeLayer(baseLayer);
+        baseLayer = L.tileLayer(BASEMAPS[type].url, {
+            attribution: BASEMAPS[type].attr + ' | KAROLA',
+            subdomains: BASEMAPS[type].sub,
+            maxZoom: BASEMAPS[type].maxZ || S.maxZoom,
+            minZoom: S.minZoom, noWrap: false,
+        }).addTo(map);
+        if(dataLayer) dataLayer.bringToFront();
+        if(S.labelsVisible) labelsLayer.bringToFront();
+        updateChecks(); updateStatus();
     }
 
-    // ════════════════════════════════════════════
-    //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-    // ════════════════════════════════════════════
-    function mkCanvas(w, h) {
-        const c = document.createElement('canvas');
-        c.width = w || 256; c.height = h || 256;
-        return c;
+    function toggleLabels() {
+        S.labelsVisible = !S.labelsVisible;
+        if(S.labelsVisible) labelsLayer.addTo(map);
+        else map.removeLayer(labelsLayer);
+        if(dataLayer) dataLayer.bringToFront();
+        updateChecks();
     }
 
-    function pixelate(src, sz) {
-        if (sz <= 1) return src;
+    function toggleLegendVis() {
+        S.legendVisible = !S.legendVisible;
+        document.getElementById('legend-panel').style.display = S.legendVisible ? 'block' : 'none';
+        updateChecks();
+    }
+
+    function updateChecks() {
+        document.getElementById('chk-carto').innerHTML = S.basemap==='carto'?'&#x2713;':'';
+        document.getElementById('chk-osm').innerHTML = S.basemap==='osm'?'&#x2713;':'';
+        document.getElementById('chk-labels').innerHTML = S.labelsVisible?'&#x2713;':'';
+        document.getElementById('chk-night').innerHTML = S.nightMode?'&#x2713;':'';
+        document.getElementById('chk-gray').innerHTML = S.grayscale?'&#x2713;':'';
+        document.getElementById('chk-superres').innerHTML = S.superRes>0?'&#x2713;':'';
+        document.getElementById('chk-legend').innerHTML = S.legendVisible?'&#x2713;':'';
+        document.getElementById('chk-inspect').innerHTML = S.inspect?'&#x2713;':'';
+    }
+
+    function ck(type,ts,z,x,y){return `${type}|${ts}|${z}|${x}|${y}`;}
+    function mkC(w,h){const c=document.createElement('canvas');c.width=w||256;c.height=h||256;return c;}
+
+    function getRealPixel(uiVal) { return uiVal; }
+
+    function applySharpen(src, amount) {
+        if(amount <= 0) return src;
         const sw = src.width, sh = src.height;
-        const bw = Math.ceil(sw/sz), bh = Math.ceil(sh/sz);
-        const sm = mkCanvas(bw, bh);
-        const sc = sm.getContext('2d');
-        const sd = src.getContext('2d').getImageData(0,0,sw,sh).data;
-
-        for (let py=0;py<bh;py++) for (let px=0;px<bw;px++) {
-            let r=0,g=0,b=0,a=0,n=0;
-            const x0=px*sz, y0=py*sz;
-            const x1=Math.min(x0+sz,sw), y1=Math.min(y0+sz,sh);
-            for (let y=y0;y<y1;y++) for (let x=x0;x<x1;x++) {
-                const i=(y*sw+x)*4;
-                if (sd[i+3]>0){r+=sd[i];g+=sd[i+1];b+=sd[i+2];a+=sd[i+3];n++;}
-            }
-            if (n>0){
-                sc.fillStyle=`rgba(${r/n|0},${g/n|0},${b/n|0},${a/n/255})`;
-                sc.fillRect(px,py,1,1);
+        const out = mkC(sw, sh); const octx = out.getContext('2d');
+        octx.drawImage(src, 0, 0);
+        const id = octx.getImageData(0, 0, sw, sh); const d = id.data;
+        const factor = amount / 100;
+        const copy = new Uint8ClampedArray(d);
+        for(let y = 1; y < sh - 1; y++) {
+            for(let x = 1; x < sw - 1; x++) {
+                const i = (y * sw + x) * 4;
+                for(let c = 0; c < 3; c++) {
+                    const center = copy[i + c];
+                    const surround = (copy[((y-1)*sw + x)*4 + c] + copy[((y+1)*sw + x)*4 + c] + copy[(y*sw + x-1)*4 + c] + copy[(y*sw + x+1)*4 + c]) / 4;
+                    d[i + c] = Math.min(255, Math.max(0, center + (center - surround) * factor * 2));
+                }
             }
         }
-
-        const out = mkCanvas(sw, sh);
-        const oc = out.getContext('2d');
-        oc.imageSmoothingEnabled = false;
-        oc.drawImage(sm, 0, 0, sw, sh);
+        octx.putImageData(id, 0, 0);
         return out;
     }
 
-    // ════════════════════════════════════════════
-    //  ОБРАБОТКА ИЗОБРАЖЕНИЯ ТАЙЛА
-    //  Единая функция — принимает img, mode
-    //  Читает исходную яркость → дБЗ → цвет
-    // ════════════════════════════════════════════
-    function processTile(img, mode) {
-        const c = mkCanvas();
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        const id = ctx.getImageData(0, 0, 256, 256);
-        const d  = id.data;
-
-        for (let i = 0; i < d.length; i += 4) {
-            // Прозрачный пиксель — пропускаем
-            if (d[i+3] === 0) continue;
-
-            // Исходная яркость тайла = dBZ (среднее по каналам)
-            const raw = (d[i] + d[i+1] + d[i+2]) / 3 | 0;
-
-            // Применяем boost чувствительности
-            const dbz = Math.min(80, raw + CFG.dbzBoost);
-
-            let rgb = null;
-
-            if (mode === 'radar') {
-                const entry = dbzToRadarEntry(dbz);
-                if (entry) rgb = entry.rgb;
-            } else {
-                // wx — та же яркость тайла, другая палитра
-                const entry = dbzToWxEntry(dbz);
-                if (entry) rgb = entry.rgb;
-            }
-
-            if (rgb) {
-                d[i]   = rgb[0];
-                d[i+1] = rgb[1];
-                d[i+2] = rgb[2];
-                d[i+3] = 215;
-            } else {
-                d[i+3] = 0; // ниже порога — прозрачно
-            }
-        }
-
-        ctx.putImageData(id, 0, 0);
-        return c;
+    function superResample(src, level) {
+        if(level <= 0) return src;
+        const sw = src.width, sh = src.height;
+        const scale = level + 1;
+        const bigW = sw * scale, bigH = sh * scale;
+        const big = mkC(bigW, bigH);
+        const bctx = big.getContext('2d');
+        bctx.imageSmoothingEnabled = true;
+        bctx.imageSmoothingQuality = 'high';
+        bctx.drawImage(src, 0, 0, bigW, bigH);
+        const out = mkC(sw, sh);
+        const octx = out.getContext('2d');
+        octx.imageSmoothingEnabled = true;
+        octx.imageSmoothingQuality = 'high';
+        octx.drawImage(big, 0, 0, sw, sh);
+        return out;
     }
 
-    // ════════════════════════════════════════════
-    //  CANVAS TILE LAYER
-    //  Один слой — рисует radar или wx
-    //  в зависимости от state.activeLayer
-    // ════════════════════════════════════════════
-    const DataLayer = L.TileLayer.extend({
-        createTile(coords, done) {
-            const tile = mkCanvas();
-            tile.style.imageRendering = 'pixelated';
-
-            const mode = state.activeLayer;
-            const k = cKey(mode, state.timestamp, coords.z, coords.x, coords.y);
-
-            const cached = cGet(k);
-            if (cached) {
-                tile.getContext('2d').drawImage(cached, 0, 0);
-                done(null, tile);
-                return tile;
+    function pixelate(src, uiPx){
+        const realPx = getRealPixel(uiPx);
+        if(realPx <= 1) {
+            let result = src;
+            if(S.superRes > 0) result = superResample(result, S.superRes);
+            if(S.smoothLevel > 0 && S.superRes === 0) result = superResample(result, S.smoothLevel);
+            if(S.sharpen > 0) result = applySharpen(result, S.sharpen);
+            return result;
+        }
+        const sw=src.width, sh=src.height;
+        const bw=Math.ceil(sw/realPx), bh=Math.ceil(sh/realPx);
+        const sm=mkC(bw, bh); const sc=sm.getContext('2d');
+        const sd=src.getContext('2d').getImageData(0,0,sw,sh).data;
+        for(let py=0;py<bh;py++) for(let px=0;px<bw;px++){
+            let r=0,g=0,b=0,a=0,n=0;
+            const x0=px*realPx, y0=py*realPx, x1=Math.min(x0+realPx,sw), y1=Math.min(y0+realPx,sh);
+            for(let y=y0; y<y1; y++) for(let x=x0; x<x1; x++){
+                const i=(y*sw+x)*4;
+                if(sd[i+3]>0){r+=sd[i];g+=sd[i+1];b+=sd[i+2];a+=sd[i+3];n++;}
             }
+            if(n>0){sc.fillStyle=`rgba(${r/n|0},${g/n|0},${b/n|0},${a/n/255})`;sc.fillRect(px,py,1,1);}
+        }
+        const out=mkC(sw,sh); const oc=out.getContext('2d');
+        oc.imageSmoothingEnabled = false;
+        oc.drawImage(sm, 0, 0, sw, sh);
+        let result = out;
+        if(S.superRes > 0) result = superResample(result, S.superRes);
+        if(S.sharpen > 0) result = applySharpen(result, S.sharpen);
+        return result;
+    }
 
-            state.loadingTiles++;
+    function applyEffects(r,g,b){
+        if(S.gamma!==1.0){const gf=1/S.gamma;r=255*Math.pow(r/255,gf);g=255*Math.pow(g/255,gf);b=255*Math.pow(b/255,gf);}
+        if(S.grayscale){const avg=(r+g+b)/3;r=avg;g=avg;b=avg;}
+        if(S.nightMode){r=Math.min(255,r*1.15);g=Math.min(255,g*0.85);b=Math.min(255,b*0.6);}
+        return [Math.round(r),Math.round(g),Math.round(b)];
+    }
+
+    function processTile(img, mode, version){
+        const c=mkC(); const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+        const id=ctx.getImageData(0,0,256,256); const d=id.data;
+        for(let i=0;i<d.length;i+=4){
+            if(d[i+3]===0)continue;
+            const raw=(d[i]+d[i+1]+d[i+2])/3|0;
+            const dbz = Math.min(80, raw);
+            let rgb=null;
+            if(mode==='radar'){const e=dbzRadar(dbz);if(e)rgb=e.r;}
+            else{const e=dbzWx(dbz);if(e)rgb=e.r;}
+            if(rgb){
+                const [r,g,b]=applyEffects(rgb[0],rgb[1],rgb[2]);
+                d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255; // ← ПОЛНАЯ НЕПРОЗРАЧНОСТЬ
+            } else {d[i+3]=0;}
+        }
+        ctx.putImageData(id,0,0);
+        return pixelate(c, S.pixel);
+    }
+
+    function processFrameQueue() {
+        if(S.isRendering || S.renderQueue.length === 0) return;
+        S.isRendering = true;
+        const z = map.getZoom();
+        const batchSize = z >= 4 ? 12 : 6;
+        const batch = S.renderQueue.splice(0, batchSize);
+        requestAnimationFrame(() => {
+            for(const task of batch) {
+                if(task.version !== S.frameVersion && task.forceVer !== S.forceRefresh) {
+                    task.done(null, task.tile);
+                    S.loading = Math.max(0, S.loading - 1);
+                    S.pendingTiles.delete(task.fk);
+                    continue;
+                }
+                try {
+                    const result = processTile(task.img, task.mode, task.version);
+                    const k = ck(task.mode, task.ts, task.z, task.x, task.y);
+                    while(S.cache.size >= S.cacheMax) S.cache.delete(S.cache.keys().next().value);
+                    S.cache.set(k, result);
+                    const ctx = task.tile.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(result, 0, 0);
+                    task.done(null, task.tile);
+                } catch(e) { task.done(null, task.tile); }
+                S.loading = Math.max(0, S.loading - 1);
+                S.pendingTiles.delete(task.fk);
+            }
             updateStatus();
+            S.isRendering = false;
+            const delay = z >= 4 ? 4 : 16;
+            if(S.renderQueue.length > 0) setTimeout(processFrameQueue, delay);
+        });
+    }
 
-            // Оба режима берут тайлы с ОДНОГО источника!
-            const url = `${CFG.tileBase}/${state.timestamp}/${coords.z}/${coords.x}_${coords.y}.png`;
-
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-
+    const DataLayer = L.TileLayer.extend({
+        createTile(coords, done){
+            const tile = mkC(); tile.style.imageRendering = 'pixelated';
+            const mode = S.layer;
+            const k = ck(mode, S.ts, coords.z, coords.x, coords.y);
+            const fk = `${coords.z}|${coords.x}|${coords.y}|${S.ts}`;
+            if(S.failed.has(fk)) { done(null, tile); return tile; }
+            const cached = S.cache.get(k);
+            if(cached) {
+                const ctx = tile.getContext('2d'); ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(cached, 0, 0); done(null, tile); return tile;
+            }
+            if(S.pendingTiles.has(fk)) { done(null, tile); return tile; }
+            S.pendingTiles.add(fk); S.loading++; updateStatus();
+            const url = `${DEF.tileBase}/${S.ts}/${coords.z}/${coords.x}_${coords.y}.png`;
+            const img = new Image(); img.crossOrigin = 'anonymous';
+            const version = S.frameVersion;
+            const forceVer = S.forceRefresh;
+            const timeout = setTimeout(() => {
+                S.pendingTiles.delete(fk); S.loading = Math.max(0, S.loading - 1);
+                S.failed.add(fk); done(null, tile); updateStatus();
+            }, 6000);
             img.onload = () => {
-                state.loadingTiles = Math.max(0, state.loadingTiles - 1);
-
-                // Обработка + пикселизация
-                const processed = processTile(img, mode);
-                const result    = pixelate(processed, state.pixelSize);
-
-                cSet(k, result);
-                tile.getContext('2d').drawImage(result, 0, 0);
-                done(null, tile);
-                updateStatus();
+                clearTimeout(timeout);
+                S.renderQueue.push({ img, mode, version, forceVer, ts: S.ts, z: coords.z, x: coords.x, y: coords.y, tile, done, fk });
+                processFrameQueue();
             };
-
             img.onerror = () => {
-                state.loadingTiles = Math.max(0, state.loadingTiles - 1);
-                done(null, tile);
-                updateStatus();
+                clearTimeout(timeout); S.pendingTiles.delete(fk);
+                S.loading = Math.max(0, S.loading - 1); S.failed.add(fk);
+                done(null, tile); updateStatus();
             };
-
-            img.src = url;
-            return tile;
+            img.src = url; return tile;
         }
     });
 
     const dataLayer = new DataLayer('', {
-        minZoom: 3,
-        maxNativeZoom: CFG.maxNativeZoom,
-        maxZoom: CFG.maxDisplayZoom,
-        tileSize: 256,
-        opacity: state.opacity,
-        bounds: L.latLngBounds([30,10],[80,90]),
-        keepBuffer: 3,
+        minZoom: 3, maxNativeZoom: DEF.maxNativeZoom, maxZoom: S.maxZoom,
+        tileSize: 256, opacity: S.opacity,
+        bounds: L.latLngBounds([20,-20],[90,110]),
+        keepBuffer: S.keepBuffer,
+        updateWhenIdle: false, updateWhenZooming: true, updateInterval: 50, noWrap: false,
     }).addTo(map);
+    dataLayer.bringToFront();
 
-    // ════════════════════════════════════════════
-    //  ПЕРЕКЛЮЧЕНИЕ СЛОЯ
-    // ════════════════════════════════════════════
+    map.on('zoomend', function() { updateStatus(); });
+
     function switchLayer(mode) {
-        if (state.activeLayer === mode) return;
-        state.activeLayer = mode;
-
-        // Кеш не чистим! Тайлы radar и wx кешируются РАЗДЕЛЬНО по ключу с mode
-        // (разные цвета для одних и тех же координат)
-
-        document.getElementById('btn-layer-radar').className =
-            'layer-btn' + (mode === 'radar' ? ' active-radar' : '');
-        document.getElementById('btn-layer-wx').className =
-            'layer-btn' + (mode === 'wx' ? ' active-wx' : '');
-
-        buildLegend();
-        dataLayer.redraw();
-        updateStatus();
-        hidePopup();
+        if(S.layer === mode) return;
+        S.layer = mode; forceFullRefresh();
+        document.getElementById('lbtn-radar').className = (mode==='radar'?'sel':'');
+        document.getElementById('lbtn-wx').className = (mode==='wx'?'sel':'');
+        buildLegend(); dataLayer.bringToFront(); updateStatus(); hidePx();
     }
+    document.getElementById('lbtn-radar').addEventListener('click', ()=>switchLayer('radar'));
+    document.getElementById('lbtn-wx').addEventListener('click', ()=>switchLayer('wx'));
 
-    document.getElementById('btn-layer-radar').addEventListener('click', () => switchLayer('radar'));
-    document.getElementById('btn-layer-wx').addEventListener('click',    () => switchLayer('wx'));
-
-    // ════════════════════════════════════════════
-    //  ЛЕГЕНДА
-    // ════════════════════════════════════════════
     function buildLegend() {
-        const el = document.getElementById('legend-content');
-        el.innerHTML = '';
-
-        if (state.activeLayer === 'radar') {
-            el.innerHTML = '<h4>🌧 Радар — дБЗ</h4>';
-            [...RADAR_PALETTE].reverse().forEach(p => {
-                const [r,g,b] = p.rgb;
-                el.innerHTML += `
-                    <div class="leg-item">
-                        <span class="leg-swatch" style="background:rgb(${r},${g},${b})"></span>
-                        <span class="leg-label">${p.label}</span>
-                        <span class="leg-range">${p.desc}</span>
-                    </div>`;
+        const el = document.getElementById('legend-body'); el.innerHTML = '';
+        if(S.layer === 'radar') {
+            el.innerHTML = '<div class="leg-section-header" style="color:#000080;">dBZ</div>';
+            [...RADAR_PAL].reverse().forEach(p => {
+                el.innerHTML += `<div class="leg-row"><span class="leg-swatch" style="background:rgb(${p.r[0]},${p.r[1]},${p.r[2]})"></span><span class="leg-label">${p.l}</span><span class="leg-range">${p.d}</span></div>`;
             });
-
         } else {
-            el.innerHTML = '<h4>⛈ Явления</h4>';
-
-            // Группируем
             const groups = {};
-            WX_PALETTE.forEach(p => (groups[p.group] = groups[p.group]||[]).push(p));
-
+            WX_PAL.forEach(p => { if(!groups[p.g]) groups[p.g] = []; groups[p.g].push(p); });
             Object.entries(groups).forEach(([name, items]) => {
-                el.innerHTML += `<div class="leg-group-hdr">${name}</div>`;
+                el.innerHTML += `<div class="leg-section-header" style="color:#800000;">${name}</div>`;
                 items.forEach(p => {
-                    const [r,g,b] = p.rgb;
-                    el.innerHTML += `
-                        <div class="leg-item">
-                            <span class="leg-swatch" style="background:rgb(${r},${g},${b})"></span>
-                            <span class="leg-label">${p.emoji} ${p.label}</span>
-                            <span class="leg-range">${p.minDbz}–${p.maxDbz===999?'∞':p.maxDbz}</span>
-                        </div>`;
+                    el.innerHTML += `<div class="leg-row"><span class="leg-swatch" style="background:rgb(${p.r[0]},${p.r[1]},${p.r[2]})"></span><span class="leg-label">${p.l}</span></div>`;
                 });
             });
         }
     }
     buildLegend();
 
-    // ════════════════════════════════════════════
-    //  TIMELINE
-    // ════════════════════════════════════════════
-    function buildFrames() {
-        const latest = nowTs(), oldest = latest - CFG.timelineHours * 3600;
-        const f = [];
-        for (let t = oldest; t <= latest; t += 600) f.push(t);
-        state.animFrames = f;
-    }
+    function buildFrames() { const lt=nowTs(), od=lt-DEF.timelineHours*3600; const f=[]; for(let t=od; t<=lt; t+=600) f.push(t); S.frames=f; }
     function buildLabels() {
-        const el = document.getElementById('tl-labels');
-        el.innerHTML = '';
-        const f = state.animFrames, N = 7;
-        for (let i=0;i<N;i++) {
-            const ts = f[Math.round(i/(N-1)*(f.length-1))];
-            const s = document.createElement('span');
-            s.textContent = new Date(ts*1000).toLocaleTimeString('ru-RU',
-                {hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'});
-            el.appendChild(s);
-        }
+        const el=document.getElementById('tl-lbls'); el.innerHTML='';
+        const f=S.frames, N=7;
+        for(let i=0;i<N;i++){ const ts=f[Math.round(i/(N-1)*(f.length-1))]; const s=document.createElement('span'); s.textContent=new Date(ts*1000).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}); el.appendChild(s); }
     }
     function updateThumb() {
-        const f = state.animFrames; if (!f.length) return;
-        const pct = Math.max(0, Math.min(1,
-            (state.timestamp - f[0]) / (f[f.length-1] - f[0])
-        ));
-        document.getElementById('timeline-fill').style.width = (pct*100)+'%';
-        document.getElementById('timeline-thumb').style.left = `calc(${pct*100}% - 2px)`;
+        const f=S.frames; if(!f.length) return;
+        const pct=Math.max(0,Math.min(1,(S.ts-f[0])/(f[f.length-1]-f[0])));
+        document.getElementById('trackfill').style.width=(pct*100)+'%';
+        document.getElementById('trackthumb').style.left=(pct*100)+'%';
     }
     function initTimeline() { buildFrames(); buildLabels(); updateThumb(); }
+    function trTs(cx) { const r=document.getElementById('track').getBoundingClientRect(); const pct=Math.max(0,Math.min(1,(cx-r.left)/r.width)); return S.frames[Math.round(pct*(S.frames.length-1))]||S.ts; }
 
-    function trackToTs(cx) {
-        const r = document.getElementById('timeline-track').getBoundingClientRect();
-        const pct = Math.max(0, Math.min(1, (cx-r.left)/r.width));
-        const f = state.animFrames;
-        return f[Math.round(pct*(f.length-1))] || state.timestamp;
-    }
+    let dragging=false;
+    document.getElementById('track').addEventListener('pointerdown',e=>{dragging=true;S.ts=trTs(e.clientX);refresh(true);e.currentTarget.setPointerCapture(e.pointerId);});
+    document.getElementById('track').addEventListener('pointermove',e=>{if(!dragging)return;S.ts=trTs(e.clientX);refresh(true);});
+    document.addEventListener('pointerup',()=>{dragging=false;});
 
-    let dragging = false;
-    document.getElementById('timeline-track').addEventListener('pointerdown', e => {
-        dragging = true;
-        state.timestamp = trackToTs(e.clientX);
-        refreshData(true);
-        e.currentTarget.setPointerCapture(e.pointerId);
-    });
-    document.getElementById('timeline-track').addEventListener('pointermove', e => {
-        if (!dragging) return;
-        state.timestamp = trackToTs(e.clientX);
-        refreshData(true);
-    });
-    document.addEventListener('pointerup', () => { dragging = false; });
-
-    // ════════════════════════════════════════════
-    //  DISPLAY
-    // ════════════════════════════════════════════
-    function fmtTs(ts) {
-        return new Date(ts*1000).toLocaleString('ru-RU', {
-            day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
-            timeZone:'Europe/Moscow',
-        }) + ' МСК';
-    }
-    function updatePill() {
-        const el = document.getElementById('timestamp-pill');
-        el.textContent = '⏱ ' + fmtTs(state.timestamp);
-        el.className = state.timestamp > nowTs() ? 'future' : '';
-    }
+    function fmtTs(ts) { return new Date(ts*1000).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})+' MCK'; }
+    function updateTimebox() { const el=document.getElementById('timebox'); el.textContent=fmtTs(S.ts); el.className=S.ts>nowTs()?'future':''; }
     function updateStatus() {
-        const z = map.getZoom();
-        document.getElementById('status-dot').className =
-            'dot' + (state.loadingTiles > 0 ? ' loading' : '');
-        const dig = z > CFG.maxNativeZoom
-            ? ` · цифр ×${Math.pow(2, z-CFG.maxNativeZoom)}` : '';
-        const lyr = state.activeLayer === 'radar' ? '🌧 дБЗ' : '⛈ явления';
-        document.getElementById('status-text').textContent =
-            `${lyr} · зум ${z}${dig} · px ${state.pixelSize}²` +
-            ` · кеш ${state.tileCache.size}` +
-            (state.loadingTiles > 0 ? ` · ⏳ ${state.loadingTiles}` : ' · ✓');
-    }
-    function updateZoomHint() {
-        const z = map.getZoom();
-        const h = document.getElementById('zoom-hint');
-        h.style.opacity = z > CFG.maxNativeZoom ? '1' : '0';
-        h.textContent   = z > CFG.maxNativeZoom
-            ? `⚠ Цифровое ×${Math.pow(2, z-CFG.maxNativeZoom)}` : '';
+        const z=map.getZoom();
+        document.getElementById('st-dot').className='st-dot'+(S.loading>0?' busy':'');
+        const amp=z>DEF.maxNativeZoom?' [x'+Math.pow(2,z-DEF.maxNativeZoom)+']':'';
+        const modeStr = S.nightMode?'NIGHT':(S.superRes>0?'SR'+S.superRes:(S.layer==='radar'?'dBZ':'WX'));
+        document.getElementById('st-txt').textContent=modeStr+' | Z'+z+amp+' | '+getRealPixel(S.pixel)+'x'+getRealPixel(S.pixel)+' | '+S.cache.size+'/'+S.cacheMax+(S.loading?' | LD'+S.loading:' | OK');
+        const c=map.getCenter(); document.getElementById('st-coords').textContent=c.lat.toFixed(3)+'N '+c.lng.toFixed(3)+'E';
     }
 
-    // ════════════════════════════════════════════
-    //  REFRESH
-    // ════════════════════════════════════════════
-    let rThrottle = null;
-    function refreshData(throttled = false) {
-        updatePill(); updateThumb();
-        if (throttled) {
-            clearTimeout(rThrottle);
-            rThrottle = setTimeout(() => dataLayer.redraw(), 200);
-        } else {
-            dataLayer.redraw();
-        }
+    let rth=null;
+    function refresh(thr) {
+        updateTimebox(); updateThumb(); S.frameVersion++;
+        if(thr) { clearTimeout(rth); rth=setTimeout(()=>{dataLayer.redraw();dataLayer.bringToFront();updateStatus();},60); }
+        else { dataLayer.redraw(); dataLayer.bringToFront(); updateStatus(); }
     }
 
-    // ════════════════════════════════════════════
-    //  ANIMATION
-    // ════════════════════════════════════════════
-    function animMs() { return CFG.animFrameMs / CFG.animSpeeds[state.speedIdx]; }
-    function animStep() {
-        state.animFrame = (state.animFrame+1) % state.animFrames.length;
-        state.timestamp = state.animFrames[state.animFrame];
-        refreshData();
+    function forceFullRefresh() {
+        S.forceRefresh++; S.frameVersion++; S.renderQueue = [];
+        S.cache.clear(); S.failed.clear(); S.pendingTiles.clear();
+        dataLayer.redraw(); dataLayer.bringToFront(); updateStatus();
     }
+
+    function ams() { return DEF.animFrameMs/DEF.animSpeeds[S.speedI]; }
+    function astep() { S.frameI=(S.frameI+1)%S.frames.length; S.ts=S.frames[S.frameI]; S.failed.clear(); S.frameVersion++; refresh(); }
     function startAnim() {
-        buildFrames(); state.animFrame = 0;
-        if (state.animTimer) clearInterval(state.animTimer);
-        state.animTimer = setInterval(animStep, animMs());
-        const b = document.getElementById('play-btn');
-        b.textContent='⏹'; b.classList.add('playing'); state.playing=true;
+        buildFrames(); S.frameI=0; if(S.timer) clearInterval(S.timer);
+        S.timer=setInterval(astep, ams());
+        const b=document.getElementById('playbtn'); b.textContent='\u25A0'; b.classList.add('playing'); S.playing=true;
     }
-    function stopAnim() {
-        clearInterval(state.animTimer); state.animTimer=null; state.playing=false;
-        const b = document.getElementById('play-btn');
-        b.textContent='▶'; b.classList.remove('playing');
-    }
-    document.getElementById('play-btn').addEventListener('click', () =>
-        state.playing ? stopAnim() : startAnim()
-    );
-    document.getElementById('speed-badge').addEventListener('click', () => {
-        state.speedIdx = (state.speedIdx+1) % CFG.animSpeeds.length;
-        document.getElementById('speed-badge').textContent =
-            '🎞 '+CFG.animSpeeds[state.speedIdx]+'×';
-        if (state.playing) {
-            clearInterval(state.animTimer);
-            state.animTimer = setInterval(animStep, animMs());
+    function stopAnim() { clearInterval(S.timer); S.timer=null; S.playing=false; const b=document.getElementById('playbtn'); b.textContent='\u25B6'; b.classList.remove('playing'); }
+    document.getElementById('playbtn').addEventListener('click', ()=>S.playing?stopAnim():startAnim());
+    document.getElementById('speedbadge').addEventListener('click', ()=>{S.speedI=(S.speedI+1)%DEF.animSpeeds.length;document.getElementById('speedbadge').textContent=DEF.animSpeeds[S.speedI]+'x';if(S.playing){clearInterval(S.timer);S.timer=setInterval(astep,ams());}});
+
+    function getPx(latlng) {
+        const z=Math.min(map.getZoom(),DEF.maxNativeZoom);
+        const pt=map.project(latlng,z);
+        const tx=Math.floor(pt.x/256),ty=Math.floor(pt.y/256);
+        const px=Math.floor(pt.x-tx*256),py=Math.floor(pt.y-ty*256);
+        const k=ck(S.layer,S.ts,z,tx,ty);
+        const cv=S.cache.get(k);
+        if(!cv)return null;
+        const p=cv.getContext('2d').getImageData(px,py,1,1).data;
+        if(p[3] > 0) {
+            const rawDbz = p[3];
+            return {r:p[0],g:p[1],b:p[2],raw:rawDbz};
         }
-        showToast('Скорость: '+CFG.animSpeeds[state.speedIdx]+'×');
-    });
-
-    // ════════════════════════════════════════════
-    //  PIXEL INSPECTOR
-    // ════════════════════════════════════════════
-    function getPixelAt(latlng) {
-        const z  = Math.min(map.getZoom(), CFG.maxNativeZoom);
-        const pt = map.project(latlng, z);
-        const tx = Math.floor(pt.x/256), ty = Math.floor(pt.y/256);
-        const px = Math.floor(pt.x - tx*256), py = Math.floor(pt.y - ty*256);
-        const k  = cKey(state.activeLayer, state.timestamp, z, tx, ty);
-        const cv = cGet(k); if (!cv) return null;
-        const p  = cv.getContext('2d').getImageData(px, py, 1, 1).data;
-        return p[3] > 10 ? {r:p[0], g:p[1], b:p[2]} : null;
+        return null;
     }
 
-    function showPopup(latlng, cp) {
-        const px = getPixelAt(latlng);
-        const row   = document.getElementById('pp-main-row');
-        const empty = document.getElementById('pp-empty');
-
-        if (px) {
-            let name='', val='', rgb=null;
-
-            if (state.activeLayer === 'radar') {
-                const e = rgbToRadarEntry(px.r, px.g, px.b);
-                if (e) { name=e.desc; val=e.label; rgb=e.rgb; }
+    function showPx(latlng,cp) {
+        const px=getPx(latlng);
+        const row=document.getElementById('pp-row');
+        const empty=document.getElementById('pp-empty');
+        if(px && px.raw > 0) {
+            let nm='',vl='',rgb=null;
+            if(S.layer==='radar'){
+                const e=dbzRadar(px.raw);
+                if(e){nm=e.d;vl=e.l;rgb=e.r;}
+                else {nm='dBZ';vl=px.raw.toFixed(0);rgb=[180,180,180];}
             } else {
-                const e = rgbToWxEntry(px.r, px.g, px.b);
-                if (e) { name=e.emoji+' '+e.label; val=e.group+' · '+e.minDbz+'–'+(e.maxDbz===999?'∞':e.maxDbz)+' дБЗ'; rgb=e.rgb; }
+                const e=dbzWx(px.raw);
+                if(e){nm=e.l;vl=e.g;rgb=e.r;}
+                else {nm='Явление';vl='~'+px.raw.toFixed(0);rgb=[180,180,180];}
             }
-
-            if (rgb) {
-                document.getElementById('pp-swatch').style.background =
-                    `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-                document.getElementById('pp-name').textContent = name;
-                document.getElementById('pp-val').textContent  = val;
-                row.style.display   = 'flex';
-                empty.style.display = 'none';
-            } else {
-                row.style.display   = 'none';
-                empty.style.display = 'block';
-            }
+            document.getElementById('pp-swatch').style.background=`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+            document.getElementById('pp-name').textContent=nm;
+            document.getElementById('pp-val').textContent=vl;
+            row.style.display='flex';empty.style.display='none';
         } else {
-            row.style.display   = 'none';
-            empty.style.display = 'block';
+            row.style.display='none';empty.style.display='block';
         }
+        document.getElementById('pp-title').textContent=S.layer==='radar'?'РАДАР':'ЯВЛЕНИЕ';
+        document.getElementById('pp-coords').textContent=latlng.lat.toFixed(5)+' N  '+latlng.lng.toFixed(5)+' E';
+        const mr=document.getElementById('mapbox').getBoundingClientRect();
+        let left=cp.x+18+mr.left,top=cp.y-20+mr.top;
+        if(left+260>mr.right)left=cp.x-260-10+mr.left;
+        if(top+160>mr.bottom)top=cp.y-160+mr.top;
+        if(top<mr.top)top=mr.top+4;
+        const popup=document.getElementById('pxpop');popup.style.left=left+'px';popup.style.top=top+'px';popup.classList.add('visible');
+    }
+    function hidePx() { document.getElementById('pxpop').classList.remove('visible'); }
 
-        document.getElementById('pp-title').textContent =
-            state.activeLayer === 'radar' ? '📊 Радар: дБЗ' : '⛈ Явление';
-        document.getElementById('pp-coords').textContent =
-            `${latlng.lat.toFixed(4)}° с.ш.   ${latlng.lng.toFixed(4)}° в.д.`;
-
-        // позиционирование
-        const mr = document.getElementById('map').getBoundingClientRect();
-        const W=260, H=160;
-        let left = cp.x + 16;
-        let top  = cp.y - 20 + mr.top;
-        if (left+W > mr.right)  left = cp.x - W - 10;
-        if (top+H  > mr.bottom) top  = cp.y - H + mr.top;
-        if (top < mr.top) top = mr.top + 4;
-
-        const popup = document.getElementById('pixel-popup');
-        popup.style.left = left+'px';
-        popup.style.top  = top+'px';
-        popup.classList.add('visible');
+    function toggleInspect() {
+        S.inspect=!S.inspect;
+        document.getElementById('map').classList.toggle('inspect',S.inspect);
+        document.getElementById('btn-inspect').classList.toggle('on',S.inspect);
+        if(!S.inspect)hidePx();
+        updateChecks();
     }
 
-    function hidePopup() {
-        document.getElementById('pixel-popup').classList.remove('visible');
+    function toggleNightMode() {
+        S.nightMode = !S.nightMode;
+        document.getElementById('btn-night').classList.toggle('on', S.nightMode);
+        updateChecks(); forceFullRefresh();
+        showToast(S.nightMode ? 'НОЧНОЙ РЕЖИМ ВКЛ' : 'НОЧНОЙ РЕЖИМ ВЫКЛ');
+    }
+    document.getElementById('btn-night').addEventListener('click', toggleNightMode);
+    document.getElementById('btn-refresh').addEventListener('click', ()=>{forceFullRefresh();showToast('ТАЙЛЫ ОБНОВЛЕНЫ');});
+
+    function takeScreenshot() {
+        const mapContainer = document.getElementById('map');
+        const rect = mapContainer.getBoundingClientRect();
+        const canvas = mkC(rect.width, rect.height);
+        const ctx = canvas.getContext('2d');
+
+        const allTiles = document.querySelectorAll('#map .leaflet-tile');
+        allTiles.forEach(tile => {
+            if(tile.complete && tile.naturalWidth > 0) {
+                try {
+                    const tr = tile.getBoundingClientRect();
+                    ctx.drawImage(tile, tr.left-rect.left, tr.top-rect.top, tr.width, tr.height);
+                } catch(e) {}
+            } else if(tile.tagName === 'CANVAS') {
+                try {
+                    const tr = tile.getBoundingClientRect();
+                    ctx.drawImage(tile, tr.left-rect.left, tr.top-rect.top, tr.width, tr.height);
+                } catch(e) {}
+            }
+        });
+
+        const now = new Date();
+        const mskTime = now.toLocaleString('ru-RU', {timeZone:'Europe/Moscow', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        const text = `KAROLA | ${mskTime} MCK | ${userName}`;
+        ctx.font = 'bold 13px "Courier New", monospace';
+        const tm = ctx.measureText(text);
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(8, rect.height-30, tm.width+10, 20);
+        ctx.fillStyle = '#0f0';
+        ctx.fillText(text, 12, rect.height-14);
+
+        try {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `karola_${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.png`;
+            a.click();
+            showToast('СКРИНШОТ СОХРАНЁН');
+        } catch(e) {
+            alert('Не удалось сохранить скриншот из-за политики безопасности браузера (CORS). Сохраняю только радарный слой.');
+            const fallbackCanvas = mkC(rect.width, rect.height);
+            const fctx = fallbackCanvas.getContext('2d');
+            fctx.fillStyle = '#000';
+            fctx.fillRect(0,0,rect.width,rect.height);
+            const radarTiles = document.querySelectorAll('#map canvas');
+            radarTiles.forEach(tile => {
+                try {
+                    const tr = tile.getBoundingClientRect();
+                    fctx.drawImage(tile, tr.left-rect.left, tr.top-rect.top, tr.width, tr.height);
+                } catch(err) {}
+            });
+            fctx.fillStyle = 'rgba(0,0,0,0.8)';
+            fctx.fillRect(8, rect.height-30, tm.width+10, 20);
+            fctx.fillStyle = '#0f0';
+            fctx.fillText(text, 12, rect.height-14);
+            try {
+                const a = document.createElement('a');
+                a.href = fallbackCanvas.toDataURL('image/png');
+                a.download = `karola_radar_${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.png`;
+                a.click();
+                showToast('СКРИНШОТ РАДАРА СОХРАНЁН');
+            } catch(err2) {
+                alert('Ошибка сохранения скриншота.');
+            }
+        }
+    }
+    document.getElementById('btn-screenshot').addEventListener('click', takeScreenshot);
+
+    map.on('click',e=>{if(S.inspect)showPx(e.latlng,e.containerPoint);});
+    document.getElementById('pp-close').addEventListener('click',hidePx);
+
+    function closeAllMenus(){document.querySelectorAll('.mbar-dropdown').forEach(d=>d.classList.remove('open'));document.querySelectorAll('.mbar-item').forEach(m=>m.classList.remove('active'));}
+
+    document.getElementById('menubar').addEventListener('click',e=>{
+        const item=e.target.closest('.mbar-item');if(!item)return;e.stopPropagation();
+        const menuId=item.dataset.menu;const menu=document.getElementById(menuId);
+        const wasOpen=menu.classList.contains('open');closeAllMenus();
+        if(!wasOpen){menu.classList.add('open');item.classList.add('active');}
+    });
+
+    function applyModeChange() {
+        S.forceRefresh++; S.frameVersion++; S.renderQueue = [];
+        S.cache.clear(); S.failed.clear(); S.pendingTiles.clear();
+        dataLayer.redraw(); dataLayer.bringToFront(); updateStatus();
     }
 
-    const btnInspect = document.getElementById('btn-inspect');
-    btnInspect.addEventListener('click', () => {
-        state.inspectMode = !state.inspectMode;
-        btnInspect.classList.toggle('active', state.inspectMode);
-        btnInspect.textContent = state.inspectMode ? '🔍 ВКЛ' : '🔍 Инспектор';
-        document.getElementById('map').classList.toggle('inspect-mode', state.inspectMode);
-        document.getElementById('inspect-badge').classList.toggle('visible', state.inspectMode);
-        if (!state.inspectMode) hidePopup();
+    let calcExpr = '';
+    document.querySelectorAll('.calc-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const val = this.textContent;
+            if(val === '=') { try { calcExpr = eval(calcExpr).toString(); } catch(e) { calcExpr = 'Ошибка'; } }
+            else { calcExpr += val; }
+            document.getElementById('calc-display').value = calcExpr || '0';
+        });
     });
+    document.getElementById('calc-clear').addEventListener('click', ()=>{calcExpr='';document.getElementById('calc-display').value='0';});
 
-    map.on('click', e => {
-        if (!state.inspectMode) return;
-        showPopup(e.latlng, e.containerPoint);
-    });
-
-    document.getElementById('pp-close').addEventListener('click', hidePopup);
-
-    // ════════════════════════════════════════════
-    //  CONTROLS
-    // ════════════════════════════════════════════
-    function stepTime(d) { stopAnim(); state.timestamp += d; refreshData(); }
-    document.getElementById('btn-p60').addEventListener('click', () => stepTime(-3600));
-    document.getElementById('btn-p30').addEventListener('click', () => stepTime(-1800));
-    document.getElementById('btn-p10').addEventListener('click', () => stepTime(-600));
-    document.getElementById('btn-n10').addEventListener('click', () => stepTime(600));
-    document.getElementById('btn-n30').addEventListener('click', () => stepTime(1800));
-    document.getElementById('btn-now').addEventListener('click', () => {
-        stopAnim(); state.timestamp = nowTs(); refreshData();
-        showToast('Обновлено до актуального времени');
-    });
-    document.getElementById('btn-reset').addEventListener('click', () =>
-        map.setView(CFG.defaultCenter, CFG.defaultZoom)
-    );
-    document.getElementById('btn-locate').addEventListener('click', () => {
-        if (!navigator.geolocation) { showToast('Геолокация недоступна'); return; }
-        navigator.geolocation.getCurrentPosition(
-            p => map.setView([p.coords.latitude, p.coords.longitude], 8),
-            ()  => showToast('Не удалось получить местоположение')
-        );
-    });
-    document.getElementById('sel-pixel').addEventListener('change', e => {
-        state.pixelSize = parseInt(e.target.value);
-        // При смене пикселизации нужно перерисовать — кеш для этого размера уже пуст
-        // (ключи содержат mode, но не pixelSize — чистим полностью)
-        state.tileCache.clear();
-        refreshData(); updateStatus();
-    });
-    document.getElementById('sl-opacity').addEventListener('input', e => {
-        state.opacity = parseInt(e.target.value) / 100;
-        dataLayer.setOpacity(state.opacity);
-        document.getElementById('opacity-val').textContent = e.target.value + '%';
-    });
-
-    // Keyboard
-    document.addEventListener('keydown', e => {
-        if (e.target.tagName==='INPUT' || e.target.tagName==='SELECT') return;
-        if (e.key==='ArrowLeft')  stepTime(-600);
-        if (e.key==='ArrowRight') stepTime(600);
-        if (e.key===' ')  { e.preventDefault(); state.playing ? stopAnim() : startAnim(); }
-        if (e.key==='r'||e.key==='R') { state.timestamp=nowTs(); refreshData(); }
-        if (e.key==='i'||e.key==='И') btnInspect.click();
-        if (e.key==='1') switchLayer('radar');
-        if (e.key==='2') switchLayer('wx');
-        if (e.key==='Escape') { if(state.inspectMode){state.inspectMode=true;btnInspect.click();} }
-        if (e.key==='+'||e.key==='=') map.zoomIn();
-        if (e.key==='-') map.zoomOut();
-    });
-
-    map.on('zoomend', () => { updateStatus(); updateZoomHint(); });
-
-    setInterval(() => {
-        if (!state.playing && nowTs() !== state.timestamp)
-            showToast('🔔 Новые данные — нажмите «Сейчас»');
-        initTimeline();
-    }, 5*60*1000);
-
-    // ════════════════════════════════════════════
-    //  TOAST
-    // ════════════════════════════════════════════
-    let toastTimer = null;
-    function showToast(msg) {
-        const el = document.getElementById('toast');
-        el.textContent = msg; el.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    function handleMenuAction(action) {
+        switch(action) {
+            case'export-config':{
+                const cfg=JSON.stringify({gamma:S.gamma,opacity:S.opacity,pixel:S.pixel,minDbz:S.minDbz,basemap:S.basemap,night:S.nightMode,gray:S.grayscale,superres:S.superRes,smooth:S.smoothLevel,sharpen:S.sharpen,labels:S.labelsVisible},null,2);
+                const blob=new Blob([cfg],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='karola_config.json';a.click();break;
+            }
+            case'import-config':{
+                const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+                inp.onchange=function(){const r=new FileReader();r.onload=function(){try{const c=JSON.parse(r.result);
+                    if(c.gamma!==undefined)S.gamma=c.gamma;if(c.opacity!==undefined){S.opacity=c.opacity;dataLayer.setOpacity(c.opacity);}
+                    if(c.pixel!==undefined){S.pixel=c.pixel;document.getElementById('px-select').value=c.pixel;}
+                    if(c.minDbz!==undefined)S.minDbz=c.minDbz;if(c.basemap!==undefined)switchBasemap(c.basemap);
+                    if(c.night!==undefined)S.nightMode=c.night;if(c.gray!==undefined)S.grayscale=c.gray;
+                    if(c.superres!==undefined)S.superRes=c.superres;if(c.smooth!==undefined)S.smoothLevel=c.smooth;
+                    if(c.sharpen!==undefined)S.sharpen=c.sharpen;
+                    document.getElementById('btn-night').classList.toggle('on', S.nightMode);
+                    applyModeChange();updateChecks();showToast('ИМПОРТИРОВАНО');}catch(er){showToast('ОШИБКА ФАЙЛА');}};r.readAsText(inp.files[0]);};inp.click();break;
+            }
+            case'screenshot':takeScreenshot();break;
+            case'copy-link':{const c=map.getCenter();navigator.clipboard.writeText(location.href+'?lat='+c.lat.toFixed(5)+'&lng='+c.lng.toFixed(5)+'&zoom='+map.getZoom());break;}
+            case'copy-coords':{const c=map.getCenter();navigator.clipboard.writeText(c.lat.toFixed(5)+', '+c.lng.toFixed(5));break;}
+            case'reset-all':{
+                S.gamma=1.0;S.opacity=0.65;S.pixel=1;S.minDbz=5;S.superRes=2;S.smoothLevel=1;S.sharpen=25;
+                S.keepBuffer=8;S.cacheMax=600;DEF.animFrameMs=800;DEF.animSpeeds=[1,2,4];S.speedI=0;
+                DEF.timelineHours=3;S.nightMode=false;S.grayscale=false;S.labelsVisible=true;S.legendVisible=true;
+                dataLayer.setOpacity(S.opacity);dataLayer.options.keepBuffer=S.keepBuffer;
+                document.getElementById('px-select').value=1;document.getElementById('speedbadge').textContent='1x';
+                document.getElementById('btn-night').classList.remove('on');
+                document.getElementById('legend-panel').style.display='block';
+                if(!map.hasLayer(labelsLayer))labelsLayer.addTo(map);
+                if(S.basemap!=='carto')switchBasemap('carto');
+                applyModeChange();initTimeline();updateChecks();buildLegend();break;
+            }
+            case'basemap-carto':switchBasemap('carto');break;
+            case'basemap-osm':switchBasemap('osm');break;
+            case'toggle-labels':toggleLabels();break;
+            case'night-mode':toggleNightMode();break;
+            case'grayscale-mode':S.grayscale=!S.grayscale;updateChecks();applyModeChange();break;
+            case'superres-mode':S.superRes=(S.superRes+1)%5;updateChecks();applyModeChange();showToast('SuperRes: '+(S.superRes===0?'Выкл':'x'+(S.superRes+1)));break;
+            case'toggle-legend':toggleLegendVis();break;
+            case'reset-view':map.setView(DEF.defaultCenter,DEF.defaultZoom);break;
+            case'inspect':toggleInspect();break;
+            case'calculator':document.getElementById('modal-calc').classList.add('open');break;
+            case'converter':showToast('1 км = 0.621 мили | 1 миля = 1.609 км | 1 м/с = 3.6 км/ч');break;
+            case'geolocate':if(!navigator.geolocation){showToast('НЕДОСТУПНО');break;}navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],8);},()=>showToast('ОШИБКА'));break;
+            case'advanced':openAdvanced();break;
+            case'clear-cache':forceFullRefresh();break;
+            case'reload':forceFullRefresh();break;
+        }
+        closeAllMenus();
     }
 
-    // ════════════════════════════════════════════
-    //  INIT
-    // ════════════════════════════════════════════
-    initTimeline();
-    updatePill();
-    updateStatus();
-    updateZoomHint();
-    refreshData();
-    showToast('1/2 — слои · Пробел — анимация · I — инспектор · R — сейчас');
+    document.querySelectorAll('.mbar-dropdown').forEach(dd=>{dd.addEventListener('click',e=>{const item=e.target.closest('.mitem');if(!item)return;if(item.dataset.action){handleMenuAction(item.dataset.action);closeAllMenus();}});});
+    document.addEventListener('click',()=>closeAllMenus());
+
+    document.getElementById('px-select').addEventListener('change',function(){S.pixel=parseInt(this.value);forceFullRefresh();});
+    document.getElementById('btn-inspect').addEventListener('click',toggleInspect);
+    document.getElementById('btn-locate').addEventListener('click',()=>{if(!navigator.geolocation){showToast('НЕДОСТУПНО');return;}navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],8);},()=>showToast('ОШИБКА'));});
+    document.getElementById('btn-reset').addEventListener('click',()=>{map.setView(DEF.defaultCenter,DEF.defaultZoom);});
+
+    function openAdvanced(){
+        document.getElementById('set-gamma').value=Math.round(S.gamma*100);document.getElementById('val-gamma').textContent=S.gamma.toFixed(2);
+        document.getElementById('set-opacity').value=Math.round(S.opacity*100);document.getElementById('val-opacity').textContent=Math.round(S.opacity*100)+'%';
+        document.getElementById('set-superres').value=S.superRes;
+        document.getElementById('set-smooth').value=S.smoothLevel;
+        document.getElementById('set-sharpen').value=S.sharpen;document.getElementById('val-sharpen').textContent=S.sharpen+'%';
+        document.getElementById('modal-advanced').classList.add('open');
+    }
+    document.getElementById('modal-close').addEventListener('click',()=>document.getElementById('modal-advanced').classList.remove('open'));
+    document.getElementById('modal-advanced').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+    document.getElementById('set-gamma').addEventListener('input',function(){document.getElementById('val-gamma').textContent=(this.value/100).toFixed(2);});
+    document.getElementById('set-opacity').addEventListener('input',function(){document.getElementById('val-opacity').textContent=this.value+'%';});
+    document.getElementById('set-sharpen').addEventListener('input',function(){document.getElementById('val-sharpen').textContent=this.value+'%';});
+
+    document.getElementById('btn-apply-adv').addEventListener('click',function(){
+        S.gamma=parseInt(document.getElementById('set-gamma').value)/100;
+        S.opacity=parseInt(document.getElementById('set-opacity').value)/100;
+        S.superRes=parseInt(document.getElementById('set-superres').value);
+        S.smoothLevel=parseInt(document.getElementById('set-smooth').value);
+        S.sharpen=parseInt(document.getElementById('set-sharpen').value);
+        dataLayer.setOpacity(S.opacity);
+        applyModeChange();updateChecks();
+        document.getElementById('modal-advanced').classList.remove('open');
+        showToast('НАСТРОЙКИ ПРИМЕНЕНЫ');
+    });
+
+    document.getElementById('calc-close').addEventListener('click',()=>document.getElementById('modal-calc').classList.remove('open'));
+    document.getElementById('modal-calc').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+
+    function st(d){stopAnim();S.ts+=d;S.frameVersion++;refresh();}
+    document.getElementById('btn-p60').addEventListener('click',()=>st(-3600));
+    document.getElementById('btn-p30').addEventListener('click',()=>st(-1800));
+    document.getElementById('btn-p10').addEventListener('click',()=>st(-600));
+    document.getElementById('btn-n10').addEventListener('click',()=>st(600));
+    document.getElementById('btn-n30').addEventListener('click',()=>st(1800));
+    document.getElementById('btn-now').addEventListener('click',()=>{stopAnim();S.ts=nowTs();S.frameVersion++;refresh();});
+
+    document.addEventListener('keydown',e=>{
+        if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+        switch(e.key){
+            case'ArrowLeft':st(-600);break;case'ArrowRight':st(600);break;
+            case' ':e.preventDefault();S.playing?stopAnim():startAnim();break;
+            case'r':case'R':stopAnim();S.ts=nowTs();S.frameVersion++;refresh();break;
+            case'i':case'I':toggleInspect();break;
+            case'n':case'N':toggleNightMode();break;
+            case'f':case'F':forceFullRefresh();break;
+            case'p':case'P':takeScreenshot();break;
+            case'1':switchLayer('radar');break;case'2':switchLayer('wx');break;
+            case'Escape':if(S.inspect)toggleInspect();hidePx();closeAllMenus();document.getElementById('modal-advanced').classList.remove('open');document.getElementById('modal-calc').classList.remove('open');break;
+            case'+':case'=':map.zoomIn();break;case'-':map.zoomOut();break;
+        }
+    });
+
+    map.on('zoomend moveend',updateStatus);
+    setInterval(()=>{if(!S.playing&&nowTs()!==S.ts)showToast('НОВЫЕ ДАННЫЕ - НАЖМИТЕ [СЕЙЧАС]');initTimeline();},5*60*1000);
+
+    let toastT=null;
+    function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
+
+    initTimeline();updateTimebox();updateStatus();updateChecks();refresh();dataLayer.bringToFront();
+    if(userName) setTimeout(()=>showToast('KAROLA | P=СКРИН N=НОЧЬ I=ИНСП ПРОБЕЛ R=СЕЙЧАС'),500);
 
 })();
 </script>
