@@ -106,10 +106,10 @@ body {
         const inputPw = document.getElementById('passwordInput').value;
         const errDiv = document.getElementById('errorMsg');
         
-        // Пароль xHgjal129@ спрятан в Base64, чтобы не читался глазами в коде
+        
         const targetPass = atob('eEhnamFsMTI5QA=='); 
         
-        // Надежное SHA-256 хеширование
+        
         const encodeStr = str => new TextEncoder().encode(str);
         const hashStr = async str => {
             const buf = await crypto.subtle.digest('SHA-256', encodeStr(str));
@@ -120,9 +120,9 @@ body {
         const targetHash = await hashStr(targetPass);
 
         if(inputHash === targetHash) {
-            // Записываем сессию только на время открытой вкладки
+            
             sessionStorage.setItem('karola_auth_session', 'active');
-            // Перекидываем на радар
+            
             window.location.href = 'index.html';
         } else {
             errDiv.textContent = 'Неверный пароль';
