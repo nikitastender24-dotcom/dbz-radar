@@ -4,7 +4,7 @@
     <!-- СКРИПТ-ЗАЩИТНИК (Должен быть самым первым) -->
     <script>
         if (sessionStorage.getItem('karola_auth_session') !== 'active') {
-            window.location.replace('auth.html'); // Меняем URL без сохранения в истории браузера
+            window.location.replace('auth.html');
         }
     </script>
     
@@ -96,6 +96,23 @@
         .leaflet-control-zoom a:hover { background: var(--hover) !important; }
         .leaflet-control-attribution { display: none; }
         .leaflet-tile { border: none !important; outline: none !important; margin: 0 !important; padding: 0 !important; }
+
+        @media (max-width: 768px) {
+            #toolbar { top: 5px; left: 5px; right: 5px; flex-wrap: wrap; justify-content: space-between; }
+            .leaflet-control-zoom { margin-top: 90px !important; }
+            #legend-panel { bottom: 5px; right: 5px; min-width: 120px; padding: 6px; max-height: 160px; font-size: 10px; }
+            .leg-title { font-size: 10px; margin-bottom: 4px; }
+            .leg-row { font-size: 9px; margin-bottom: 2px; }
+            .leg-swatch { width: 12px; height: 10px; }
+            #time-pill { bottom: 5px; left: 5px; font-size: 10px; padding: 4px 6px; }
+            #timeline { bottom: 40px; width: 95%; height: auto; flex-wrap: wrap; padding: 6px; justify-content: center; }
+            #track { flex: 0 0 100%; margin-top: 8px; order: 10; height: 20px; }
+            .wbtn-tl { font-size: 9px; padding: 4px; margin: 2px; }
+            #playbtn { width: 26px; height: 26px; font-size: 12px; margin: 2px; }
+            #speedbadge { font-size: 9px; padding: 4px; margin: 2px; }
+            #pxpop { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; min-width: 180px; }
+            .modal-win { min-width: 90%; }
+        }
     </style>
 </head>
 <body>
@@ -331,7 +348,6 @@
         if(act === 'copy-link') { const c = map.getCenter(); navigator.clipboard.writeText(location.href+'?lat='+c.lat.toFixed(5)+'&lng='+c.lng.toFixed(5)+'&zoom='+map.getZoom()); showToast('Скопировано'); }
         if(act === 'copy-coords') { const c = map.getCenter(); navigator.clipboard.writeText(c.lat.toFixed(5)+', '+c.lng.toFixed(5)); showToast('Скопировано'); }
         if(act === 'reset-all') location.reload();
-        // Логика кнопки "Выйти"
         if(act === 'logout') { sessionStorage.removeItem('karola_auth_session'); window.location.href = 'auth.html'; }
     }
 
