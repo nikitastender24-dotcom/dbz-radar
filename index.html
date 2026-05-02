@@ -7,9 +7,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
-            --bg: #c0c0c0; --dark: #808080; --darker: #404040;
-            --light: #dfdfdf; --lighter: #ffffff; --navy: #000080;
+            --bg: #001a33; --dark: #001122; --darker: #000814;
+            --light: #003366; --lighter: #004080; --navy: #0059b3;
+            --text: #ffffff;
             --header-h: 56px; --timeline-h: 66px;
+        }
+
+        html.light-theme {
+            --bg: #ffffff; --dark: #f0f0f0; --darker: #e0e0e0;
+            --light: #cccccc; --lighter: #bbbbbb; --navy: #0059b3;
+            --text: #000000;
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -17,23 +24,21 @@
         html, body {
             height:100%; background:var(--bg);
             font-family:'MS Sans Serif','Microsoft Sans Serif','Tahoma',sans-serif;
-            font-size:11px; color:#000; overflow:hidden; user-select:none;
+            font-size:11px; color:var(--text); overflow:hidden; user-select:none;
         }
 
         .wbtn {
-            background:var(--bg); color:#000; border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            background:var(--bg); color:var(--text); border:1px solid var(--lighter);
             padding:4px 10px; cursor:pointer; font-size:11px;
             font-family:inherit; white-space:nowrap; min-height:23px; outline:none;
         }
-        .wbtn:hover { background:#d4d0c8; }
+        .wbtn:hover { background:var(--light); }
         .wbtn:active, .wbtn.on {
-            border-color:var(--darker) var(--lighter) var(--lighter) var(--darker);
-            padding:5px 9px 3px 11px; background:#b0b0b0;
+            border-color:var(--navy); background:var(--navy); color:#fff;
         }
         .wbtn.hi {
             background:var(--navy); color:#fff; font-weight:bold;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            border-color:var(--navy);
         }
 
         #titlebar {
@@ -45,9 +50,9 @@
         .tb-text { color:#fff; font-weight:bold; font-size:11px; padding-left:10px; }
         .tb-btns { display:flex; gap:2px; align-items:center; }
         .tb-btn {
-            width:16px; height:14px; background:var(--bg); border:1px solid #000;
+            width:16px; height:14px; background:var(--bg); border:1px solid var(--lighter);
             cursor:pointer; font-size:8px; line-height:13px; text-align:center;
-            font-weight:bold; color:#000; font-family:inherit;
+            font-weight:bold; color:var(--text); font-family:inherit;
         }
 
         #login-screen {
@@ -57,13 +62,12 @@
             flex-direction:column; gap:10px;
         }
         #login-screen .login-box {
-            background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
-            padding:20px; text-align:center; min-width:280px;
+            background:var(--bg); border:1px solid var(--lighter);
+            padding:20px; text-align:center; min-width:280px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         #login-screen h2 { font-size:14px; margin-bottom:10px; color:var(--navy); }
         #login-screen input {
-            border:2px inset #808080; background:#fff; padding:5px 8px;
+            border:1px solid var(--darker); background:var(--light); color:var(--text); padding:5px 8px;
             font-size:12px; font-family:inherit; width:100%; margin-bottom:8px;
         }
 
@@ -73,7 +77,7 @@
             display:flex; align-items:center; padding:0 2px; z-index:9998;
         }
         .mbar-item {
-            padding:3px 8px; cursor:pointer; font-size:11px; color:#000;
+            padding:3px 8px; cursor:pointer; font-size:11px; color:var(--text);
             position:relative; border:1px solid transparent;
         }
         .mbar-item:hover, .mbar-item.active {
@@ -82,13 +86,12 @@
 
         .mbar-dropdown {
             position:absolute; top:100%; left:0; display:none;
-            background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
-            z-index:10000; min-width:200px; padding:2px;
+            background:var(--bg); border:1px solid var(--lighter);
+            z-index:10000; min-width:200px; padding:2px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .mbar-dropdown.open { display:block; }
         .mbar-dropdown .mitem {
-            padding:5px 22px 5px 10px; cursor:pointer; font-size:11px;
+            padding:5px 22px 5px 10px; cursor:pointer; font-size:11px; color:var(--text);
             white-space:nowrap; display:flex; align-items:center; gap:6px;
         }
         .mbar-dropdown .mitem:hover { background:var(--navy); color:#fff; }
@@ -105,45 +108,42 @@
         #timebox {
             background:#000; color:#0f0; font-family:'Courier New',monospace;
             font-size:13px; font-weight:bold; padding:4px 10px;
-            border:2px inset #808080; min-width:180px; text-align:center; letter-spacing:1px;
+            border:1px solid var(--darker); min-width:180px; text-align:center; letter-spacing:1px;
         }
         #timebox.future { color:#ff0; }
 
         .layer-sw {
-            display:flex; border:2px solid;
-            border-color:var(--darker) var(--lighter) var(--lighter) var(--darker); overflow:hidden;
+            display:flex; border:1px solid var(--darker); overflow:hidden;
         }
         .layer-sw button {
             padding:5px 12px; font-size:11px; cursor:pointer; border:none;
-            background:var(--bg); color:#000; font-family:inherit; white-space:nowrap; min-height:23px;
+            background:var(--bg); color:var(--text); font-family:inherit; white-space:nowrap; min-height:23px;
         }
         .layer-sw button.sel {
-            background:var(--navy); color:#fff; font-weight:bold; border:1px inset #808080;
+            background:var(--navy); color:#fff; font-weight:bold; border:1px solid var(--navy);
         }
 
         .px-group { display:flex; align-items:center; gap:3px; }
-        .px-group label { font-weight:bold; font-size:11px; }
+        .px-group label { font-weight:bold; font-size:11px; color:var(--text); }
 
         #profile-badge {
             position:fixed; top:20px; right:8px; z-index:10001;
-            background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
-            padding:2px 8px; font-size:11px; font-weight:bold;
+            background:var(--bg); border:1px solid var(--lighter);
+            padding:2px 8px; font-size:11px; font-weight:bold; color:var(--text);
             cursor:pointer; display:flex; align-items:center; gap:4px;
         }
-        #profile-badge:hover { background:#d4d0c8; }
+        #profile-badge:hover { background:var(--light); }
 
         #mapbox {
             position:fixed; top:calc(18px + 22px + var(--header-h)); left:0; right:0;
-            bottom:var(--timeline-h); border:2px inset #808080; background:var(--dark);
+            bottom:var(--timeline-h); border-top:1px solid var(--darker); background:var(--dark);
         }
         #map { width:100%; height:100%; }
         #map.inspect { cursor:crosshair !important; }
 
         .panel {
-            position:fixed; background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
-            z-index:1500; font-size:11px;
+            position:fixed; background:var(--bg); border:1px solid var(--lighter);
+            z-index:1500; font-size:11px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .panel .ptitle {
             background:var(--navy); color:#fff; font-weight:bold;
@@ -158,27 +158,22 @@
             display:block;
         }
         #legend-panel::-webkit-scrollbar { width:16px; }
-        #legend-panel::-webkit-scrollbar-track { background:var(--bg); border:2px inset #808080; }
-        #legend-panel::-webkit-scrollbar-thumb {
-            background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
-        }
+        #legend-panel::-webkit-scrollbar-track { background:var(--bg); }
+        #legend-panel::-webkit-scrollbar-thumb { background:var(--lighter); }
+        
         .leg-section-header {
             font-size:10px; font-weight:bold; text-transform:uppercase;
-            color:var(--navy); margin:6px 0 2px; padding-top:4px;
-            border-top:2px groove #808080;
+            color:var(--text); margin:6px 0 2px; padding-top:4px;
+            border-top:1px solid var(--darker);
         }
         .leg-section-header:first-child { border-top:none; margin-top:0; padding-top:0; }
         .leg-row {
             display:flex; align-items:center; gap:5px;
             margin-bottom:1px; font-size:10px; padding:2px 0;
         }
-        .leg-swatch {
-            width:30px; height:12px; flex-shrink:0;
-            border:2px inset #808080;
-        }
-        .leg-label { flex:1; color:#000; }
-        .leg-range { color:var(--darker); font-size:9px; margin-left:auto; }
+        .leg-swatch { width:30px; height:12px; flex-shrink:0; border:1px solid var(--darker); }
+        .leg-label { flex:1; color:var(--text); }
+        .leg-range { color:var(--text); opacity:0.6; font-size:9px; margin-left:auto; }
 
         #statusbar {
             position:fixed; bottom:var(--timeline-h); left:0; right:0; height:20px;
@@ -186,18 +181,16 @@
             border-bottom:1px solid var(--darker);
             display:flex; align-items:center; padding:0 6px; gap:8px; z-index:1500;
         }
-        .st-dot { width:11px; height:11px; border:1px inset #808080; background:#0f0; }
+        .st-dot { width:11px; height:11px; background:#0f0; border-radius:50%; }
         .st-dot.busy { background:#ff0; animation:blink 0.7s infinite; }
 
         #timeline {
             position:fixed; bottom:0; left:0; right:0; height:var(--timeline-h);
-            background:var(--bg); border-top:2px solid var(--lighter);
+            background:var(--bg); border-top:1px solid var(--lighter);
             display:flex; align-items:center; padding:4px 6px; gap:4px; z-index:2000;
         }
         #playbtn {
-            width:36px; height:36px; background:#008000;
-            border:3px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            width:36px; height:36px; background:#008000; border:1px solid var(--lighter);
             color:#fff; font-size:16px; cursor:pointer;
             display:flex; align-items:center; justify-content:center;
             flex-shrink:0; font-weight:bold;
@@ -205,42 +198,41 @@
         #playbtn.playing { background:#800000; }
         #track {
             flex:1; position:relative; height:26px;
-            background:#fff; border:2px inset #808080; cursor:pointer;
+            background:var(--light); border:1px solid var(--darker); cursor:pointer;
         }
         #trackfill {
             position:absolute; top:0; left:0; height:100%;
-            background:var(--navy); opacity:0.4; transition:width 0.1s;
+            background:var(--navy); opacity:0.6; transition:width 0.1s;
         }
         #trackthumb {
             position:absolute; top:0; transform:translateX(-50%);
-            width:5px; height:100%; background:#000; border:1px solid #fff;
+            width:5px; height:100%; background:var(--text); border:1px solid var(--bg);
             transition:left 0.1s; pointer-events:none;
         }
         .tl-lbls {
             position:absolute; bottom:2px; left:0; right:0;
             display:flex; justify-content:space-between; padding:0 4px; pointer-events:none;
         }
-        .tl-lbls span { font-size:8px; font-weight:bold; color:#000; }
+        .tl-lbls span { font-size:8px; font-weight:bold; color:var(--text); text-shadow: 1px 1px 2px var(--bg); }
         #speedbadge {
             font-weight:bold; font-size:11px; padding:4px 7px; cursor:pointer;
-            border:2px inset #808080; background:#fff; min-width:30px; text-align:center;
+            border:1px solid var(--darker); background:var(--light); color:var(--text); min-width:30px; text-align:center;
         }
 
         #pxpop {
-            position:fixed; z-index:3500; background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            position:fixed; z-index:3500; background:var(--bg); border:1px solid var(--lighter);
             min-width:250px; pointer-events:none; opacity:0; transform:scale(0.92); transition:0.12s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         #pxpop.visible { opacity:1; transform:scale(1); pointer-events:auto; }
         #pxpop .pbody { padding:6px 10px; }
         .pp-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-        .pp-swatch { width:36px; height:22px; flex-shrink:0; border:2px inset #808080; }
-        .pp-coords { margin-top:6px; padding-top:5px; border-top:1px solid var(--dark); font-size:10px; color:var(--darker); font-family:'Courier New',monospace; }
+        .pp-swatch { width:36px; height:22px; flex-shrink:0; border:1px solid var(--darker); }
+        .pp-coords { margin-top:6px; padding-top:5px; border-top:1px solid var(--dark); font-size:10px; color:var(--text); opacity:0.7; font-family:'Courier New',monospace; }
 
         #toast {
             position:fixed; bottom:calc(var(--timeline-h) + 65px); left:50%;
-            transform:translateX(-50%); background:#ffffcc; border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            transform:translateX(-50%); background:var(--navy); color:#fff; border:1px solid var(--lighter);
             font-weight:bold; padding:5px 14px; font-size:11px; z-index:4000;
             pointer-events:none; opacity:0; transition:0.3s;
         }
@@ -248,49 +240,45 @@
 
         .modal-overlay {
             position:fixed; top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,0.4); z-index:6000;
+            background:rgba(0,0,0,0.6); z-index:6000;
             display:none; align-items:center; justify-content:center;
         }
         .modal-overlay.open { display:flex; }
         .modal-win {
-            background:var(--bg); border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            background:var(--bg); border:1px solid var(--lighter);
             min-width:360px; max-width:500px; max-height:80vh;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .modal-title {
             background:var(--navy); color:#fff; font-weight:bold;
             padding:3px 5px; display:flex; justify-content:space-between; align-items:center;
         }
-        .modal-body { padding:10px; overflow-y:auto; max-height:65vh; }
+        .modal-body { padding:10px; overflow-y:auto; max-height:65vh; color:var(--text); }
         .modal-body .row {
             display:flex; align-items:center; justify-content:space-between;
             margin-bottom:6px; gap:6px;
         }
         .modal-body label { font-weight:bold; font-size:11px; min-width:110px; }
-        .modal-body select, .modal-body input { border:2px inset #808080; background:#fff; padding:3px 5px; font-size:11px; font-family:inherit; }
+        .modal-body select, .modal-body input { border:1px solid var(--darker); background:var(--light); color:var(--text); padding:3px 5px; font-size:11px; font-family:inherit; }
         .modal-body .val { min-width:40px; text-align:center; font-weight:bold; }
         .modal-body h4 {
-            font-size:10px; text-transform:uppercase; color:var(--navy);
-            margin:8px 0 4px; padding-top:6px; border-top:2px groove #808080; font-weight:bold;
+            font-size:10px; text-transform:uppercase; color:var(--text); opacity:0.8;
+            margin:8px 0 4px; padding-top:6px; border-top:1px solid var(--darker); font-weight:bold;
         }
         .modal-body h4:first-of-type { border-top:none; margin-top:0; padding-top:0; }
 
-        .leaflet-container { background:#808080 !important; }
-        .leaflet-control-zoom {
-            border:2px solid !important;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter) !important;
-        }
+        .leaflet-container { background:var(--darker) !important; }
+        .leaflet-control-zoom { border:1px solid var(--lighter) !important; }
         .leaflet-control-zoom a {
-            background:var(--bg) !important; color:#000 !important; border:none !important;
+            background:var(--bg) !important; color:var(--text) !important; border:none !important;
             border-bottom:1px solid var(--dark) !important;
             font-family:'MS Sans Serif',sans-serif !important; font-weight:bold !important;
             font-size:14px !important; width:24px !important; height:24px !important; line-height:24px !important;
         }
         .leaflet-control-zoom a:last-child { border-bottom:none !important; }
         .leaflet-control-attribution {
-            background:var(--bg) !important; color:#000 !important; font-size:8px;
-            border:2px solid;
-            border-color:var(--lighter) var(--darker) var(--darker) var(--lighter);
+            background:var(--bg) !important; color:var(--text) !important; font-size:8px;
+            border:1px solid var(--lighter);
         }
 
         .leaflet-tile {
@@ -373,16 +361,24 @@
 <div id="toolbar">
     <div id="timebox">ЗАГРУЗКА...</div><div class="sep"></div>
     <div class="layer-sw">
-        <button class="sel" id="lbtn-radar">ОСАДКИ dBZ</button>
-        <button id="lbtn-wx">ЯВЛЕНИЯ</button>
+        <button class="sel" id="lbtn-radar">ОТРАЖАЕМОСТЬ</button>
+        <button id="lbtn-wx">ОЯ ЯВЛЕНИЯ</button>
     </div><div class="sep"></div>
     <div class="px-group">
         <label>ПИКСЕЛЬ:</label>
-        <select id="px-select" style="border:2px inset #808080;background:#fff;padding:3px 5px;font-size:11px;font-family:inherit;">
+        <select id="px-select" style="border:1px solid var(--darker);background:var(--light);color:var(--text);padding:3px 5px;font-size:11px;font-family:inherit;">
             <option value="1" selected>2x2</option><option value="2">4x4</option><option value="3">8x8</option>
             <option value="4">16x16</option><option value="5">32x32</option><option value="6">64x64</option>
         </select>
     </div><div class="sep"></div>
+    
+    <!-- НОВЫЕ КНОПКИ ДЛЯ UI -->
+    <button class="wbtn" id="btn-archive" title="Архив">🕒</button>
+    <button class="wbtn" id="btn-theme" title="Светлая/Темная тема">🌙</button>
+    <button class="wbtn" id="btn-circles" title="Настройки радаров">⭕ КРУГИ</button>
+    <button class="wbtn" id="btn-clip" title="Обрезать радар по кругам">✂️ ОБРЕЗКА</button>
+    <div class="sep"></div>
+
     <button class="wbtn" id="btn-night">НОЧЬ</button>
     <button class="wbtn" id="btn-inspect">ИНСПЕКТОР</button>
     <button class="wbtn" id="btn-screenshot">СКРИН</button>
@@ -409,12 +405,27 @@
     <div class="ptitle"><span id="pp-title">ИНТЕНСИВНОСТЬ</span><span class="tb-btn" id="pp-close" style="cursor:pointer;">X</span></div>
     <div class="pbody">
         <div id="pp-row" class="pp-row"><div class="pp-swatch" id="pp-swatch"></div><div><div class="pp-name" id="pp-name">---</div><div class="pp-val" id="pp-val">---</div></div></div>
-        <div id="pp-empty" style="display:none;color:var(--darker);">[ Нет данных ]</div>
+        <div id="pp-empty" style="display:none;color:var(--text);opacity:0.7;">[ Нет данных ]</div>
         <div class="pp-coords" id="pp-coords"></div>
     </div>
 </div>
 
 <div id="toast"></div>
+
+<!-- НОВОЕ МЕНЮ КРУГОВ -->
+<div class="modal-overlay" id="modal-circles">
+    <div class="modal-win" style="min-width:320px;">
+        <div class="modal-title"><span>РАДАРЫ (КРУГИ ОБЗОРА)</span><span class="tb-btn" id="circles-close" style="cursor:pointer;">X</span></div>
+        <div class="modal-body">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button class="wbtn" id="btn-circ-all" style="flex:1;">ВКЛЮЧИТЬ ВСЕ</button>
+                <button class="wbtn" id="btn-circ-none" style="flex:1;">ВЫКЛЮЧИТЬ ВСЕ</button>
+            </div>
+            <h4>СПИСОК РАДАРОВ</h4>
+            <div id="circ-list"></div>
+        </div>
+    </div>
+</div>
 
 <div class="modal-overlay" id="modal-advanced">
     <div class="modal-win">
@@ -436,7 +447,7 @@
         <div class="modal-title"><span>ПРОФИЛЬ</span><span class="tb-btn" id="profile-close" style="cursor:pointer;">X</span></div>
         <div class="modal-body" style="text-align:center;">
             <div style="font-size:14px;font-weight:bold;margin-bottom:8px;" id="profile-username"></div>
-            <div style="font-family:'Courier New',monospace;font-size:11px;color:var(--darker);">UID: <span id="profile-uid"></span></div>
+            <div style="font-family:'Courier New',monospace;font-size:11px;opacity:0.7;">UID: <span id="profile-uid"></span></div>
         </div>
     </div>
 </div>
@@ -514,6 +525,15 @@
     document.getElementById('profile-close').addEventListener('click', ()=>document.getElementById('modal-profile').classList.remove('open'));
     document.getElementById('modal-profile').addEventListener('click', function(e){ if(e.target === this) this.classList.remove('open'); });
 
+    // Новые кнопки UI
+    document.getElementById('btn-theme').addEventListener('click', function() {
+        document.documentElement.classList.toggle('light-theme');
+        showToast('ТЕМА ИЗМЕНЕНА');
+    });
+    document.getElementById('btn-archive').addEventListener('click', () => {
+        showToast('ДОСТУП В АРХИВ (В РАЗРАБОТКЕ)');
+    });
+
     const DEF = {
         radarDelay: 600, maxNativeZoom: 5,
         defaultCenter: [57.5, 55], defaultZoom: 5,
@@ -531,6 +551,7 @@
         labelsVisible: true, legendVisible: true, pendingTiles: new Set(),
         frameVersion: 0, renderQueue: [], isRendering: false,
         superRes: 2, smoothLevel: 1, sharpen: 25, forceRefresh: 0,
+        clipping: false // НОВАЯ ПЕРЕМЕННАЯ ОБРЕЗКИ
     };
 
     function nowTs() { return Math.floor((Date.now()/1000 - DEF.radarDelay)/600)*600; }
@@ -554,7 +575,7 @@
         {v:20, r:[255,150,50], l:'10 dBZ', d:'Умеренные осадки'},
         {v:15, r:[112,255,126], l:'4 dBZ', d:'Слабые осадки'},
         {v:6, r:[153,255,51], l:'3 dBZ', d:'Облачность, туман'},
-];
+    ];
 
     const WX_PAL = [
         {g:'ОБЛАЧНОСТЬ', l:'Облачность, туман', r:[135, 135, 135], a:6, b:14},
@@ -574,8 +595,7 @@
         {g:'ШКВАЛ', l:'Шквал умеренный', r:[252, 0, 227], a:69, b:69},
         {g:'ШКВАЛ', l:'Шквал сильный', r:[156, 0, 140], a:70, b:79},
         {g:'ТОРНАДО', l:'ТОРНАДО', r:[255, 255, 255], a:80, b:999},
-];
-
+    ];
 
     function dbzRadar(dbz){if(dbz<S.minDbz)return null;for(const p of RADAR_PAL)if(dbz>=p.v)return p;return null;}
     function dbzWx(dbz){if(dbz<S.minDbz)return null;for(const p of WX_PAL)if(dbz>=p.a&&dbz<=p.b)return p;return null;}
@@ -603,7 +623,6 @@
     });
     if(S.labelsVisible) labelsLayer.addTo(map);
 
-    // ---------- КРУГИ АЭРОПОРТОВ (250 км, чёрный контур, без заливки, opacity 0.5) ----------
     const airports = [
         { name: "Внуково (Москва)", lat: 55.5917, lng: 37.2611 },
         { name: "Борщево (Воронеж)", lat: 51.8161, lng: 39.2297 },
@@ -637,7 +656,7 @@
         { name: "Нижний Новгород", lat: 56.2300, lng: 43.7850 },
         { name: "Вологда", lat: 59.2825, lng: 39.9444 },
         { name: "Санкт-Петербург (Пулково)", lat: 59.8003, lng: 30.2625 },
-        { name: "Санкт-Петербург (Пулково)", lat: 53.222865, lng: 63.543034 },
+        { name: "Петропавловск", lat: 53.222865, lng: 63.543034 },
         { name: "Усть-Каменогорск (Устькаман)", lat: 50.024726, lng: 82.514019 },
         { name: "Актобе", lat: 50.255986, lng: 57.201262 },
         { name: "Орал", lat: 51.137194, lng: 51.527638 },
@@ -645,23 +664,91 @@
         { name: "Архангельск", lat: 64.624714, lng: 40.511398 },
         { name: "Калевала", lat: 65.208577, lng: 31.137743 },
         { name: "Петрозаводск", lat: 61.820288, lng: 34.238956 },
-        { name: "Millerovo", lat: 48.947054, lng: 40.410504 },
-        { name: "Брест", lat: 48.947054, lng: 40.410504 },
-        { name: "Mahachkala", lat: 42.812151, lng: 47.661695 },
-        { name: "Atyraw", lat: 47.130724, lng: 51.819055 }
+        { name: "Миллерово", lat: 48.947054, lng: 40.410504 },
+        { name: "Махачкала", lat: 42.812151, lng: 47.661695 },
+        { name: "Атырау", lat: 47.130724, lng: 51.819055 }
     ];
 
-    airports.forEach(ap => {
-        L.circle([ap.lat, ap.lng], {
-            radius: 250000,          // 250 км
-            color: '#000000',        // чёрный контур
-            opacity: 0.3,            // прозрачность контура 50%
-            fillOpacity: 0,          // без заливки
-            weight: 2.5,
-            interactive: true       // не мешает кликам
+    // УПРАВЛЕНИЕ КРУГАМИ
+    const circleLayers = [];
+    const circList = document.getElementById('circ-list');
+    airports.forEach((ap, idx) => {
+        ap.active = true;
+        const c = L.circle([ap.lat, ap.lng], {
+            radius: 250000, color: '#000000', opacity: 0.3, fillOpacity: 0, weight: 2.5, interactive: true
         }).addTo(map);
+        circleLayers.push({ ap: ap, layer: c });
+        
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.innerHTML = `<label style="min-width:200px;">${ap.name}</label><input type="checkbox" checked data-idx="${idx}">`;
+        circList.appendChild(div);
     });
-    // ---------------------------------------------------------------------------------
+
+    circList.addEventListener('change', e => {
+        if(e.target.tagName === 'INPUT') {
+            const idx = e.target.dataset.idx;
+            circleLayers[idx].ap.active = e.target.checked;
+            if(e.target.checked) map.addLayer(circleLayers[idx].layer);
+            else map.removeLayer(circleLayers[idx].layer);
+            if(S.clipping) forceFullRefresh();
+        }
+    });
+
+    document.getElementById('btn-circ-all').addEventListener('click', () => {
+        circList.querySelectorAll('input').forEach(i => {
+            i.checked = true; circleLayers[i.dataset.idx].ap.active = true;
+            if(!map.hasLayer(circleLayers[i.dataset.idx].layer)) map.addLayer(circleLayers[i.dataset.idx].layer);
+        });
+        if(S.clipping) forceFullRefresh();
+    });
+
+    document.getElementById('btn-circ-none').addEventListener('click', () => {
+        circList.querySelectorAll('input').forEach(i => {
+            i.checked = false; circleLayers[i.dataset.idx].ap.active = false;
+            if(map.hasLayer(circleLayers[i.dataset.idx].layer)) map.removeLayer(circleLayers[i.dataset.idx].layer);
+        });
+        if(S.clipping) forceFullRefresh();
+    });
+
+    document.getElementById('btn-circles').addEventListener('click', () => {
+        document.getElementById('modal-circles').classList.add('open');
+    });
+    document.getElementById('circles-close').addEventListener('click', () => {
+        document.getElementById('modal-circles').classList.remove('open');
+    });
+
+    // ФУНКЦИЯ АППАРАТНОЙ ОБРЕЗКИ ТАЙЛА ПО КРУГАМ
+    document.getElementById('btn-clip').addEventListener('click', function() {
+        S.clipping = !S.clipping;
+        this.classList.toggle('on', S.clipping);
+        forceFullRefresh();
+        showToast('ОБРЕЗКА РАДАРА: ' + (S.clipping ? 'ВКЛЮЧЕНА' : 'ВЫКЛЮЧЕНА'));
+    });
+
+    function applyClippingMask(ctx, z, x, y) {
+        if(!S.clipping) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        const nwPoint = new L.Point(x * 256, y * 256);
+        let hasActive = false;
+        circleLayers.forEach(cObj => {
+            if(!cObj.ap.active) return;
+            hasActive = true;
+            const centerPt = map.project([cObj.ap.lat, cObj.ap.lng], z);
+            const cx = centerPt.x - nwPoint.x;
+            const cy = centerPt.y - nwPoint.y;
+            const metersPerPixel = 40075016 * Math.cos(cObj.ap.lat * Math.PI / 180) / Math.pow(2, z + 8);
+            const r = 250000 / metersPerPixel;
+            ctx.moveTo(cx + r, cy);
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        });
+        if(hasActive) ctx.fill();
+        else ctx.clearRect(0,0,256,256);
+        ctx.restore();
+    }
 
     function switchBasemap(type) {
         if(S.basemap === type) return;
@@ -798,7 +885,7 @@
             else{const e=dbzWx(dbz);if(e)rgb=e.r;}
             if(rgb){
                 const [r,g,b]=applyEffects(rgb[0],rgb[1],rgb[2]);
-                d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255; // ← ПОЛНАЯ НЕПРОЗРАЧНОСТЬ
+                d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255;
             } else {d[i+3]=0;}
         }
         ctx.putImageData(id,0,0);
@@ -827,6 +914,8 @@
                     const ctx = task.tile.getContext('2d');
                     ctx.imageSmoothingEnabled = false;
                     ctx.drawImage(result, 0, 0);
+                    // ПРИМЕНЯЕМ ОБРЕЗКУ ПОСЛЕ РЕНДЕРА ТАЙЛА
+                    applyClippingMask(ctx, task.z, task.x, task.y);
                     task.done(null, task.tile);
                 } catch(e) { task.done(null, task.tile); }
                 S.loading = Math.max(0, S.loading - 1);
@@ -849,7 +938,10 @@
             const cached = S.cache.get(k);
             if(cached) {
                 const ctx = tile.getContext('2d'); ctx.imageSmoothingEnabled = false;
-                ctx.drawImage(cached, 0, 0); done(null, tile); return tile;
+                ctx.drawImage(cached, 0, 0);
+                // ПРИМЕНЯЕМ ОБРЕЗКУ К КЕШУ ТОЖЕ
+                applyClippingMask(ctx, coords.z, coords.x, coords.y);
+                done(null, tile); return tile;
             }
             if(S.pendingTiles.has(fk)) { done(null, tile); return tile; }
             S.pendingTiles.add(fk); S.loading++; updateStatus();
@@ -899,7 +991,7 @@
     function buildLegend() {
         const el = document.getElementById('legend-body'); el.innerHTML = '';
         if(S.layer === 'radar') {
-            el.innerHTML = '<div class="leg-section-header" style="color:#000080;">dBZ</div>';
+            el.innerHTML = '<div class="leg-section-header">ОТРАЖАЕМОСТЬ</div>';
             [...RADAR_PAL].reverse().forEach(p => {
                 el.innerHTML += `<div class="leg-row"><span class="leg-swatch" style="background:rgb(${p.r[0]},${p.r[1]},${p.r[2]})"></span><span class="leg-label">${p.l}</span><span class="leg-range">${p.d}</span></div>`;
             });
@@ -907,7 +999,7 @@
             const groups = {};
             WX_PAL.forEach(p => { if(!groups[p.g]) groups[p.g] = []; groups[p.g].push(p); });
             Object.entries(groups).forEach(([name, items]) => {
-                el.innerHTML += `<div class="leg-section-header" style="color:#800000;">${name}</div>`;
+                el.innerHTML += `<div class="leg-section-header">${name}</div>`;
                 items.forEach(p => {
                     el.innerHTML += `<div class="leg-row"><span class="leg-swatch" style="background:rgb(${p.r[0]},${p.r[1]},${p.r[2]})"></span><span class="leg-label">${p.l}</span></div>`;
                 });
@@ -1009,7 +1101,7 @@
         } else {
             row.style.display='none';empty.style.display='block';
         }
-        document.getElementById('pp-title').textContent=S.layer==='radar'?'РАДАР':'ЯВЛЕНИЕ';
+        document.getElementById('pp-title').textContent=S.layer==='radar'?'ОТРАЖАЕМОСТЬ':'ОЯ ЯВЛЕНИЯ';
         document.getElementById('pp-coords').textContent=latlng.lat.toFixed(5)+' N  '+latlng.lng.toFixed(5)+' E';
         const mr=document.getElementById('mapbox').getBoundingClientRect();
         let left=cp.x+18+mr.left,top=cp.y-20+mr.top;
@@ -1241,7 +1333,7 @@
             case'f':case'F':forceFullRefresh();break;
             case'p':case'P':takeScreenshot();break;
             case'1':switchLayer('radar');break;case'2':switchLayer('wx');break;
-            case'Escape':if(S.inspect)toggleInspect();hidePx();closeAllMenus();document.getElementById('modal-advanced').classList.remove('open');document.getElementById('modal-calc').classList.remove('open');break;
+            case'Escape':if(S.inspect)toggleInspect();hidePx();closeAllMenus();document.getElementById('modal-advanced').classList.remove('open');document.getElementById('modal-calc').classList.remove('open');document.getElementById('modal-circles').classList.remove('open');break;
             case'+':case'=':map.zoomIn();break;case'-':map.zoomOut();break;
         }
     });
