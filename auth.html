@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Вход</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #eef2f7;
+  --card: rgba(255, 255, 255, 0.94);
+  --text: #0f172a;
+  --muted: #94a3b8;
+  --border: rgba(148, 163, 184, 0.28);
+  --accent: #2563eb;
+  --danger: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.14), transparent 28rem),
+    linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--text);
+}
+
+.auth-shell {
+  width: min(100%, 420px);
+  padding: 24px;
+}
+
+.auth-card {
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-input:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+}
+
+.auth-button {
+  border: none;
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-error {
+  min-height: 20px;
+  color: var(--danger);
+  font-size: 13px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <form method="post" class="auth-form" id="loginForm">
+        <input class="auth-input" type="password" id="passwordInput" name="password" autocomplete="current-password" autofocus />
+        <button class="auth-button" type="submit">Войти</button>
+        <div class="auth-error" id="errorMsg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inputPw = document.getElementById('passwordInput').value;
+        const errDiv = document.getElementById('errorMsg');
+        
+        // Пароль xHgjal129@ спрятан в Base64, чтобы не читался глазами в коде
+        const targetPass = atob('eEhnamFsMTI5QA=='); 
+        
+        // Надежное SHA-256 хеширование
+        const encodeStr = str => new TextEncoder().encode(str);
+        const hashStr = async str => {
+            const buf = await crypto.subtle.digest('SHA-256', encodeStr(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+        };
+
+        const inputHash = await hashStr(inputPw);
+        const targetHash = await hashStr(targetPass);
+
+        if(inputHash === targetHash) {
+            // Записываем сессию только на время открытой вкладки
+            sessionStorage.setItem('karola_auth_session', 'active');
+            // Перекидываем на радар
+            window.location.href = 'index.html';
+        } else {
+            errDiv.textContent = 'Неверный пароль';
+        }
+    });
+  </script>
+</body>
+</html>
