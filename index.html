@@ -140,14 +140,14 @@
             </div>
         </div>
         
-        <!-- Новое меню: Выбор Карты -->
+        <!-- Меню: Выбор Карты (OSM по умолчанию) -->
         <div class="mbar-item" data-menu="menu-basemaps" title="Карты">
             <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></button>
             <div class="mbar-dropdown" id="menu-basemaps">
-                <div class="mitem" data-action="basemap-carto"><span class="check" id="chk-carto">&#x2713;</span>Carto Light</div>
+                <div class="mitem" data-action="basemap-carto"><span class="check" id="chk-carto"></span>Carto Light</div>
                 <div class="mitem" data-action="basemap-dark"><span class="check" id="chk-dark"></span>Carto Dark</div>
                 <div class="msep"></div>
-                <div class="mitem" data-action="basemap-osm"><span class="check" id="chk-osm"></span>OSM Классическая</div>
+                <div class="mitem" data-action="basemap-osm"><span class="check" id="chk-osm">&#x2713;</span>OSM Классическая</div>
             </div>
         </div>
 
@@ -171,7 +171,7 @@
         </div>
         <div class="sep"></div>
         <select id="px-select" style="background:transparent; border:none; color:var(--text); outline:none; cursor:pointer; font-size:12px; font-weight:bold; padding: 0 5px;">
-            <option value="1">1x1</option><option value="2" selected>2x2</option><option value="4">4x4</option><option value="8">8x8</option><option value="16">16x16</option>
+            <option value="1" selected>2x2</option><option value="2">4x4</option><option value="4">8x8</option><option value="8">16x16</option><option value="16">32x32</option>
         </select>
     </div>
     <div class="toolbar-group">
@@ -231,7 +231,7 @@
     });
 
     const DEF = { radarDelay: 600, maxNativeZoom: 5, defaultCenter: [57.5, 55], defaultZoom: 5, tileBase: 'https://rainradar.ru/composite', timelineHours: 4, animSpeeds: [1,2,4], animFrameMs: 800 };
-    const S = { ts: 0, pixel: 2, opacity: 1.0, gamma: 1.0, minDbz: 5, layer: 'radar', inspect: false, outlinePixels: false, playing: false, speedI: 0, timer: null, frameI: 0, frames: [], cache: new Map(), failed: new Set(), loading: 0, cacheMax: 600, keepBuffer: 8, basemap: 'carto', minZoom: 3, maxZoom: 10, labelsVisible: true, legendVisible: true, pendingTiles: new Set(), frameVersion: 0, renderQueue: [], isRendering: false, superRes: 1, forceRefresh: 0, clipping: true, staticMode: false };
+    const S = { ts: 0, pixel: 1, opacity: 1.0, gamma: 1.0, minDbz: 5, layer: 'radar', inspect: false, outlinePixels: false, playing: false, speedI: 0, timer: null, frameI: 0, frames: [], cache: new Map(), failed: new Set(), loading: 0, cacheMax: 600, keepBuffer: 8, basemap: 'osm', minZoom: 3, maxZoom: 10, labelsVisible: true, legendVisible: true, pendingTiles: new Set(), frameVersion: 0, renderQueue: [], isRendering: false, superRes: 1, forceRefresh: 0, clipping: true, staticMode: false };
     function nowTs() { return Math.floor((Date.now()/1000 - DEF.radarDelay)/600)*600; } S.ts = nowTs();
 
     const RADAR_PAL = [{v:80,r:[255,0,255],l:'80+ dBZ',d:'ТОРНАДО'},{v:70,r:[200,0,0],l:'70 dBZ',d:'Шквал сильный'},{v:69,r:[220,50,50],l:'69 dBZ',d:'Шквал умеренный'},{v:67,r:[240,100,100],l:'67 dBZ',d:'Шквал слабый'},{v:65,r:[180,0,180],l:'65 dBZ',d:'Град сильный'},{v:63,r:[200,50,200],l:'63 dBZ',d:'Град умеренный'},{v:60,r:[220,100,220],l:'60 dBZ',d:'Град слабый'},{v:55,r:[255,0,0],l:'55 dBZ',d:'Гроза 100%'},{v:50,r:[255,100,0],l:'43 dBZ',d:'Гроза 70%'},{v:40,r:[255,200,0],l:'40 dBZ',d:'Гроза 30%'},{v:35,r:[0,100,255],l:'35 dBZ',d:'Сильный ливень'},{v:30,r:[0,150,255],l:'30 dBZ',d:'Умеренный ливень'},{v:25,r:[0,200,255],l:'25 dBZ',d:'Слабый ливень'},{v:23,r:[255,50,50],l:'20 dBZ',d:'Сильные осадки'},{v:20,r:[255,150,50],l:'10 dBZ',d:'Умеренные осадки'},{v:15,r:[112,255,126],l:'4 dBZ',d:'Слабые осадки'},{v:6,r:[153,255,51],l:'3 dBZ',d:'Облачность, туман'}];
@@ -242,14 +242,18 @@
     const BASEMAPS = { 
         carto: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
         dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        osm: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     };
     
     // ВНИМАНИЕ: zoomControl установлен в false!
     const map = L.map('map', { center: DEF.defaultCenter, zoom: DEF.defaultZoom, maxZoom: S.maxZoom, minZoom: S.minZoom, zoomControl: false, worldCopyJump: true, fadeAnimation: false });
     let baseLayer = L.tileLayer(BASEMAPS[S.basemap], { subdomains: ['a','b','c','d'], maxZoom: 20, minZoom: S.minZoom, crossOrigin: true }).addTo(map);
+    
+    // Слой подписей
     const labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { subdomains: ['a','b','c','d'], maxZoom: 20, minZoom: S.minZoom, crossOrigin: true });
-    if(S.labelsVisible) labelsLayer.addTo(map);
+    
+    // Добавляем слой подписей ТОЛЬКО если выбрана не OSM карта (по умолчанию OSM, поэтому слой не добавляется при загрузке)
+    if(S.labelsVisible && S.basemap !== 'osm') labelsLayer.addTo(map);
 
     const airports = [
         {n:"Внуково (Москва)",lat:55.5917,lng:37.2611},{n:"Борщево (Воронеж)",lat:51.8161,lng:39.2297},{n:"Гумрак (Волгоград)",lat:48.7825,lng:44.3461},{n:"Шпаковское (Ставрополь)",lat:45.1092,lng:42.1128},{n:"Мин. Воды",lat:44.2250,lng:43.0833},{n:"Сочи",lat:43.4500,lng:39.9567},
@@ -568,23 +572,34 @@
     function handleAction(act) {
         if(act === 'basemap-carto') { 
             S.basemap = 'carto'; baseLayer.setUrl(BASEMAPS.carto); 
+            labelsLayer.setUrl('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png');
             document.getElementById('chk-carto').innerHTML = '&#x2713;'; 
             document.getElementById('chk-dark').innerHTML = ''; 
             document.getElementById('chk-osm').innerHTML = ''; 
+            if(S.labelsVisible) map.addLayer(labelsLayer);
         }
         if(act === 'basemap-dark') { 
             S.basemap = 'dark'; baseLayer.setUrl(BASEMAPS.dark); 
+            labelsLayer.setUrl('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png');
             document.getElementById('chk-dark').innerHTML = '&#x2713;'; 
             document.getElementById('chk-carto').innerHTML = ''; 
             document.getElementById('chk-osm').innerHTML = ''; 
+            if(S.labelsVisible) map.addLayer(labelsLayer);
         }
         if(act === 'basemap-osm') { 
             S.basemap = 'osm'; baseLayer.setUrl(BASEMAPS.osm); 
             document.getElementById('chk-osm').innerHTML = '&#x2713;'; 
             document.getElementById('chk-carto').innerHTML = ''; 
             document.getElementById('chk-dark').innerHTML = ''; 
+            map.removeLayer(labelsLayer);
         }
-        if(act === 'toggle-labels') { S.labelsVisible = !S.labelsVisible; if(S.labelsVisible) labelsLayer.addTo(map); else map.removeLayer(labelsLayer); document.getElementById('chk-labels').innerHTML = S.labelsVisible ? '&#x2713;' : ''; dataLayer.bringToFront(); }
+        if(act === 'toggle-labels') { 
+            S.labelsVisible = !S.labelsVisible; 
+            if(S.labelsVisible && S.basemap !== 'osm') map.addLayer(labelsLayer); 
+            else map.removeLayer(labelsLayer); 
+            document.getElementById('chk-labels').innerHTML = S.labelsVisible ? '&#x2713;' : ''; 
+            dataLayer.bringToFront(); 
+        }
         if(act === 'layer-radar') { S.layer = 'radar'; buildLegend(); forceFullRefresh(); document.getElementById('chk-l-radar').innerHTML = '&#x2713;'; document.getElementById('chk-l-wx').innerHTML = ''; }
         if(act === 'layer-wx') { S.layer = 'wx'; buildLegend(); forceFullRefresh(); document.getElementById('chk-l-wx').innerHTML = '&#x2713;'; document.getElementById('chk-l-radar').innerHTML = ''; }
         if(act === 'calculator') document.getElementById('modal-calc').classList.add('open');
