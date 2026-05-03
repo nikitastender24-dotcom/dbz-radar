@@ -1,133 +1,131 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Вход</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #eef2f7;
-  --card: rgba(255, 255, 255, 0.94);
-  --text: #0f172a;
-  --muted: #94a3b8;
-  --border: rgba(148, 163, 184, 0.28);
-  --accent: #2563eb;
-  --danger: #ef4444;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.14), transparent 28rem),
-    linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
-  font-family: "Inter", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 500;
-  font-style: normal;
-  color: var(--text);
-}
-
-.auth-shell {
-  width: min(100%, 420px);
-  padding: 24px;
-}
-
-.auth-card {
-  padding: 28px;
-  border-radius: 24px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(16px);
-}
-
-.auth-form {
-  display: grid;
-  gap: 14px;
-}
-
-.auth-input {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px 18px;
-  background: #fff;
-  color: var(--text);
-  font: inherit;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.auth-input:focus {
-  border-color: rgba(37, 99, 235, 0.45);
-}
-
-.auth-button {
-  border: none;
-  border-radius: 16px;
-  padding: 16px 18px;
-  background: var(--accent);
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.auth-error {
-  min-height: 20px;
-  color: var(--danger);
-  font-size: 13px;
-  text-align: center;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAROLA | Авторизация</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #ffffff;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .login-box {
+            background: #2d2d2d;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 340px;
+            border: 1px solid #404040;
+        }
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            border: 1px solid #404040;
+            background: #1e1e1e;
+            color: #ffffff;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            text-align: center;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+            transition: 0.2s;
+        }
+        input:focus {
+            border-color: #4a90e2;
+        }
+        button {
+            background: #4a90e2;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 14px;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #357abd;
+        }
+        #error-msg {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 15px;
+            font-weight: 500;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div class="auth-shell">
-    <div class="auth-card">
-      <form method="post" class="auth-form" id="loginForm">
-        <input class="auth-input" type="password" id="passwordInput" name="password" autocomplete="current-password" autofocus />
-        <button class="auth-button" type="submit">Войти</button>
-        <div class="auth-error" id="errorMsg"></div>
-      </form>
+
+    <div class="login-box">
+        <h2>KAROLA SYSTEM</h2>
+        <input type="password" id="passInput" placeholder="Введите ключ доступа" autocomplete="off">
+        <button onclick="attemptLogin()">ПОДКЛЮЧИТЬСЯ</button>
+        <div id="error-msg">Неверный ключ доступа. В доступе отказано.</div>
     </div>
-  </div>
 
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const inputPw = document.getElementById('passwordInput').value;
-        const errDiv = document.getElementById('errorMsg');
-        
-        
-        const targetPass = atob('eEhnamFsMTI5QA=='); 
-        
-        
-        const encodeStr = str => new TextEncoder().encode(str);
-        const hashStr = async str => {
-            const buf = await crypto.subtle.digest('SHA-256', encodeStr(str));
-            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-        };
+    <script>
+        // 10 рандомных ключей по 10 символов
+        const VALID_KEYS = [
+            "x9K2mP5vL8", 
+            "R4bQ7nZ1wT", 
+            "H6cM3jY8fV", 
+            "L2vX9kP4mN", 
+            "T8nR5bQ1wZ",
+            "W3jY6cM8fH", 
+            "P9kL2vX4mC", 
+            "Z1wT8nR5bQ", 
+            "F8hH6cM3jY", 
+            "M4nC9kL2vX"
+        ];
 
-        const inputHash = await hashStr(inputPw);
-        const targetHash = await hashStr(targetPass);
-
-        if(inputHash === targetHash) {
+        function attemptLogin() {
+            const enteredKey = document.getElementById('passInput').value.trim();
+            const errorElement = document.getElementById('error-msg');
             
-            sessionStorage.setItem('karola_auth_session', 'active');
-            
-            window.location.href = 'index.html';
-        } else {
-            errDiv.textContent = 'Неверный пароль';
+            if (VALID_KEYS.includes(enteredKey)) {
+                // Если пароль подошел, ставим флаг в сессию браузера
+                sessionStorage.setItem('karola_auth_session', 'active');
+                // Перенаправляем на главную страницу системы
+                window.location.replace('index.html');
+            } else {
+                // Показываем ошибку
+                errorElement.style.display = 'block';
+                // Трясем окошко (простая анимация)
+                const box = document.querySelector('.login-box');
+                box.style.transform = 'translateX(-10px)';
+                setTimeout(() => box.style.transform = 'translateX(10px)', 100);
+                setTimeout(() => box.style.transform = 'translateX(-10px)', 200);
+                setTimeout(() => box.style.transform = 'translateX(0)', 300);
+            }
         }
-    });
-  </script>
+
+        // Позволяем входить по нажатию на клавишу Enter
+        document.getElementById('passInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                attemptLogin();
+            }
+        });
+    </script>
 </body>
 </html>
