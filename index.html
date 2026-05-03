@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <!-- СКРИПТ-ЗАЩИТНИК (Должен быть самым первым) -->
     <script>
         if (sessionStorage.getItem('karola_auth_session') !== 'active') {
             window.location.replace('auth.html');
@@ -10,7 +9,7 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>KAROLA | Modern UI | Full Build</title>
+    <title>KAROLA | Radar System</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
@@ -48,8 +47,8 @@
         #map { width: 100%; height: 100%; background: #000 !important; }
         #map.inspect { cursor: crosshair !important; }
 
-        #time-pill { position: fixed; bottom: 30px; left: 30px; z-index: 2000; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; padding: 6px 12px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow); color: var(--text); pointer-events: auto; }
-        .tp-divider { width: 1px; height: 16px; background: var(--border); margin: 0 10px; }
+        #time-pill { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 2000; background: rgba(255, 255, 255, 0.95); border: 1px solid #b3b3b3; border-radius: 4px; display: flex; align-items: center; padding: 4px 10px; font-size: 13px; font-family: sans-serif; font-weight: 400; color: #333; pointer-events: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .tp-divider { width: 1px; height: 14px; background: #b3b3b3; margin: 0 10px; }
 
         #legend-panel { position: fixed; bottom: 30px; right: 30px; z-index: 1500; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; box-shadow: var(--shadow); max-height: 70vh; overflow-y: auto; pointer-events: auto; min-width: 240px; display: block; }
         #legend-panel::-webkit-scrollbar { width: 6px; }
@@ -59,7 +58,7 @@
         .leg-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 12px; color: var(--text); }
         .leg-swatch { width: 18px; height: 14px; flex-shrink: 0; }
 
-        #timeline { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px; height: var(--timeline-h); background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius); display: none; align-items: center; padding: 4px 10px; gap: 8px; z-index: 2500; box-shadow: var(--shadow); pointer-events: auto; animation: fadeIn 0.2s; }
+        #timeline { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px; height: var(--timeline-h); background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius); display: none; align-items: center; padding: 4px 10px; gap: 8px; z-index: 2500; box-shadow: var(--shadow); pointer-events: auto; animation: fadeIn 0.2s; }
         #timeline.show { display: flex; }
         .wbtn-tl { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 4px 8px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .wbtn-tl:hover { background: var(--hover); }
@@ -81,6 +80,16 @@
         #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 4000; }
         #toast.show { opacity: 1; }
 
+        #side-panel { position: fixed; top: 0; right: -320px; width: 320px; height: 100%; background: var(--panel-bg); z-index: 5000; box-shadow: -5px 0 20px rgba(0,0,0,0.5); transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        #side-panel.open { right: 0; }
+        .sp-head { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; color: var(--text); }
+        .sp-body { flex: 1; overflow-y: auto; padding: 10px; }
+        .sp-body::-webkit-scrollbar { width: 6px; }
+        .sp-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .sp-item { padding: 12px; margin-bottom: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 13px; font-weight: 500; color: var(--text); }
+        .sp-item:hover { background: var(--hover); border-color: var(--active); transform: translateY(-1px); }
+        .sp-item.active { background: var(--active); color: #fff; border-color: var(--active); }
+
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 6000; display: none; align-items: center; justify-content: center; }
         .modal-overlay.open { display: flex; }
         .modal-win { background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius); min-width: 320px; max-height: 80vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -91,27 +100,24 @@
         .wbtn-primary { background: var(--active); color: #fff; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
 
         .leaflet-container { background: #000 !important; }
-        .leaflet-control-zoom { border: none !important; box-shadow: var(--shadow) !important; border-radius: var(--radius) !important; overflow: hidden; }
-        .leaflet-control-zoom a { background: var(--panel-bg) !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; transition: 0.2s; }
-        .leaflet-control-zoom a:hover { background: var(--hover) !important; }
         .leaflet-control-attribution { display: none; }
         .leaflet-tile { border: none !important; outline: none !important; margin: 0 !important; padding: 0 !important; }
 
         @media (max-width: 768px) {
             #toolbar { top: 5px; left: 5px; right: 5px; flex-wrap: wrap; justify-content: space-between; }
-            .leaflet-control-zoom { margin-top: 90px !important; }
             #legend-panel { bottom: 5px; right: 5px; min-width: 120px; padding: 6px; max-height: 160px; font-size: 10px; }
             .leg-title { font-size: 10px; margin-bottom: 4px; }
             .leg-row { font-size: 9px; margin-bottom: 2px; }
             .leg-swatch { width: 12px; height: 10px; }
-            #time-pill { bottom: 5px; left: 5px; font-size: 10px; padding: 4px 6px; }
-            #timeline { bottom: 40px; width: 95%; height: auto; flex-wrap: wrap; padding: 6px; justify-content: center; }
+            #time-pill { font-size: 12px; padding: 3px 8px; }
+            #timeline { bottom: 45px; width: 95%; height: auto; flex-wrap: wrap; padding: 6px; justify-content: center; }
             #track { flex: 0 0 100%; margin-top: 8px; order: 10; height: 20px; }
             .wbtn-tl { font-size: 9px; padding: 4px; margin: 2px; }
             #playbtn { width: 26px; height: 26px; font-size: 12px; margin: 2px; }
             #speedbadge { font-size: 9px; padding: 4px; margin: 2px; }
             #pxpop { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; min-width: 180px; }
             .modal-win { min-width: 90%; }
+            #side-panel { width: 100%; right: -100%; }
         }
     </style>
 </head>
@@ -130,11 +136,21 @@
         <div class="mbar-item" data-menu="menu-view" title="Вид">
             <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
             <div class="mbar-dropdown" id="menu-view">
-                <div class="mitem" data-action="basemap-carto"><span class="check" id="chk-carto">&#x2713;</span>Светлая карта</div>
-                <div class="mitem" data-action="basemap-dark"><span class="check" id="chk-dark"></span>Тёмная карта</div>
-                <div class="msep"></div><div class="mitem" data-action="toggle-labels"><span class="check" id="chk-labels">&#x2713;</span>Подписи городов</div>
+                <div class="mitem" data-action="toggle-labels"><span class="check" id="chk-labels">&#x2713;</span>Подписи городов</div>
             </div>
         </div>
+        
+        <!-- Новое меню: Выбор Карты -->
+        <div class="mbar-item" data-menu="menu-basemaps" title="Карты">
+            <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg></button>
+            <div class="mbar-dropdown" id="menu-basemaps">
+                <div class="mitem" data-action="basemap-carto"><span class="check" id="chk-carto">&#x2713;</span>Carto Light</div>
+                <div class="mitem" data-action="basemap-dark"><span class="check" id="chk-dark"></span>Carto Dark</div>
+                <div class="msep"></div>
+                <div class="mitem" data-action="basemap-osm"><span class="check" id="chk-osm"></span>OSM Классическая</div>
+            </div>
+        </div>
+
         <div class="mbar-item" data-menu="menu-tools" title="Инструменты">
             <button class="icon-btn"><svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg></button>
             <div class="mbar-dropdown" id="menu-tools">
@@ -161,8 +177,9 @@
     <div class="toolbar-group">
         <button class="icon-btn" id="btn-theme" title="Смена темы UI"><svg id="icon-moon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3z"/></svg></button>
         <button class="icon-btn" id="btn-archive" title="Архив (4 часа)"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></button>
-        <button class="icon-btn" id="btn-circles" title="Радары"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg></button>
-        <button class="icon-btn" id="btn-clip" title="Обрезать"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></button>
+        <button class="icon-btn" id="btn-circles" title="Интерактивные Радары"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg></button>
+        <button class="icon-btn" id="btn-side-panel" title="Статичные снимки"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></button>
+        <button class="icon-btn on" id="btn-clip" title="Обрезать"><svg viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0 12c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3h-3z"/></svg></button>
         <button class="icon-btn" id="btn-inspect" title="Инспектор"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg></button>
         <button class="icon-btn" id="btn-screenshot" title="Скриншот"><svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm8 3c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z"/></svg></button>
         <button class="icon-btn" id="btn-refresh" title="Обновить"><svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
@@ -174,13 +191,20 @@
 <div id="time-pill"><span id="tp-time">--:--</span><span class="tp-divider"></span><span id="tp-date">--.--</span></div>
 <div id="legend-panel"><div class="leg-title" id="leg-title">Погодные явления</div><div id="legend-body"></div></div>
 
-<!-- Таймлайн Архива -->
 <div id="timeline">
     <button class="wbtn-tl" id="btn-p60">&lt;&lt; -1ч</button><button class="wbtn-tl" id="btn-p30">&lt; -30м</button><button class="wbtn-tl" id="btn-p10">-10м</button>
     <button id="playbtn">&#x25B6;</button>
     <button class="wbtn-tl" id="btn-n10">+10м</button><button class="wbtn-tl" id="btn-n30">+30м &gt;</button><button class="wbtn-tl" id="btn-now" style="background:var(--active);color:#fff;">СЕЙЧАС</button>
     <div id="track"><div id="trackfill"></div><div id="trackthumb"></div><div class="tl-lbls" id="tl-lbls"></div></div>
     <span id="speedbadge" class="wbtn-tl">1x</span>
+</div>
+
+<div id="side-panel">
+    <div class="sp-head">
+        <span>Статичные снимки</span>
+        <button class="icon-btn" id="sp-close" style="width:24px;height:24px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="sp-body" id="sp-list"></div>
 </div>
 
 <div id="pxpop">
@@ -192,9 +216,8 @@
 
 <div id="toast"></div>
 
-<!-- Модалки (Круги, Настройки, Кальк) -->
-<div class="modal-overlay" id="modal-circles"><div class="modal-win" style="width:340px;"><div class="modal-title"><span>Радары (Круги обзора)</span><button class="icon-btn" id="circles-close" style="width:20px;height:20px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div style="display:flex; gap:10px; margin-bottom:15px;"><button class="wbtn-primary" id="btn-circ-all" style="margin:0;">Вкл все</button><button class="wbtn-primary" id="btn-circ-none" style="margin:0; background:var(--hover); color:var(--text);">Выкл все</button></div><div id="circ-list" style="max-height: 400px; overflow-y:auto;"></div></div></div></div>
-<div class="modal-overlay" id="modal-advanced"><div class="modal-win"><div class="modal-title"><span>Настройки рендера</span><button class="icon-btn" id="modal-close" style="width:20px;height:20px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div class="row"><label>Гамма:</label><input type="range" id="set-gamma" min="50" max="200" value="100" step="5"></div><div class="row"><label>Прозрачность:</label><input type="range" id="set-opacity" min="20" max="100" value="65" step="5"></div><div class="row"><label>SuperRes:</label><select id="set-superres"><option value="0">Выкл</option><option value="1">x2</option><option value="2" selected>x3</option><option value="3">x4</option></select></div><button class="wbtn-primary" id="btn-apply-adv">ПРИМЕНИТЬ</button></div></div></div>
+<div class="modal-overlay" id="modal-circles"><div class="modal-win" style="width:340px;"><div class="modal-title"><span>Интерактивные Радары</span><button class="icon-btn" id="circles-close" style="width:20px;height:20px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div style="display:flex; gap:10px; margin-bottom:15px;"><button class="wbtn-primary" id="btn-circ-all" style="margin:0;">Вкл все</button><button class="wbtn-primary" id="btn-circ-none" style="margin:0; background:var(--hover); color:var(--text);">Выкл все</button></div><div id="circ-list" style="max-height: 400px; overflow-y:auto;"></div></div></div></div>
+<div class="modal-overlay" id="modal-advanced"><div class="modal-win"><div class="modal-title"><span>Настройки рендера</span><button class="icon-btn" id="modal-close" style="width:20px;height:20px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><div class="row"><label>Гамма:</label><input type="range" id="set-gamma" min="50" max="200" value="100" step="5"></div><div class="row"><label>Прозрачность:</label><input type="range" id="set-opacity" min="20" max="100" value="100" step="5"></div><div class="row"><label>SuperRes:</label><select id="set-superres"><option value="0">Выкл</option><option value="1" selected>x2</option><option value="2">x3</option><option value="3">x4</option></select></div><button class="wbtn-primary" id="btn-apply-adv">ПРИМЕНИТЬ</button></div></div></div>
 <div class="modal-overlay" id="modal-calc"><div class="modal-win" style="width:280px;"><div class="modal-title"><span>Калькулятор</span><button class="icon-btn" id="calc-close" style="width:20px;height:20px;"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div><div class="modal-body"><input type="text" id="calc-display" style="width:100%; font-size:18px; text-align:right; font-family:monospace; margin-bottom:10px;" value="0" readonly><div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;"><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">7</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">8</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">9</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">/</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">4</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">5</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">6</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">*</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">1</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">2</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">3</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">-</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">0</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">.</button><button class="wbtn-primary calc-btn" style="margin:0;">=</button><button class="wbtn-primary calc-btn" style="margin:0;background:var(--hover);color:var(--text);">+</button></div><button class="wbtn-primary" id="calc-clear" style="background:var(--border);color:var(--text);">ОЧИСТИТЬ</button></div></div></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -208,7 +231,7 @@
     });
 
     const DEF = { radarDelay: 600, maxNativeZoom: 5, defaultCenter: [57.5, 55], defaultZoom: 5, tileBase: 'https://rainradar.ru/composite', timelineHours: 4, animSpeeds: [1,2,4], animFrameMs: 800 };
-    const S = { ts: 0, pixel: 2, opacity: 0.65, gamma: 1.0, minDbz: 5, layer: 'radar', inspect: false, outlinePixels: false, playing: false, speedI: 0, timer: null, frameI: 0, frames: [], cache: new Map(), failed: new Set(), loading: 0, cacheMax: 600, keepBuffer: 8, basemap: 'carto', minZoom: 3, maxZoom: 10, labelsVisible: true, legendVisible: true, pendingTiles: new Set(), frameVersion: 0, renderQueue: [], isRendering: false, superRes: 2, forceRefresh: 0, clipping: false };
+    const S = { ts: 0, pixel: 2, opacity: 1.0, gamma: 1.0, minDbz: 5, layer: 'radar', inspect: false, outlinePixels: false, playing: false, speedI: 0, timer: null, frameI: 0, frames: [], cache: new Map(), failed: new Set(), loading: 0, cacheMax: 600, keepBuffer: 8, basemap: 'carto', minZoom: 3, maxZoom: 10, labelsVisible: true, legendVisible: true, pendingTiles: new Set(), frameVersion: 0, renderQueue: [], isRendering: false, superRes: 1, forceRefresh: 0, clipping: true, staticMode: false };
     function nowTs() { return Math.floor((Date.now()/1000 - DEF.radarDelay)/600)*600; } S.ts = nowTs();
 
     const RADAR_PAL = [{v:80,r:[255,0,255],l:'80+ dBZ',d:'ТОРНАДО'},{v:70,r:[200,0,0],l:'70 dBZ',d:'Шквал сильный'},{v:69,r:[220,50,50],l:'69 dBZ',d:'Шквал умеренный'},{v:67,r:[240,100,100],l:'67 dBZ',d:'Шквал слабый'},{v:65,r:[180,0,180],l:'65 dBZ',d:'Град сильный'},{v:63,r:[200,50,200],l:'63 dBZ',d:'Град умеренный'},{v:60,r:[220,100,220],l:'60 dBZ',d:'Град слабый'},{v:55,r:[255,0,0],l:'55 dBZ',d:'Гроза 100%'},{v:50,r:[255,100,0],l:'43 dBZ',d:'Гроза 70%'},{v:40,r:[255,200,0],l:'40 dBZ',d:'Гроза 30%'},{v:35,r:[0,100,255],l:'35 dBZ',d:'Сильный ливень'},{v:30,r:[0,150,255],l:'30 dBZ',d:'Умеренный ливень'},{v:25,r:[0,200,255],l:'25 dBZ',d:'Слабый ливень'},{v:23,r:[255,50,50],l:'20 dBZ',d:'Сильные осадки'},{v:20,r:[255,150,50],l:'10 dBZ',d:'Умеренные осадки'},{v:15,r:[112,255,126],l:'4 dBZ',d:'Слабые осадки'},{v:6,r:[153,255,51],l:'3 dBZ',d:'Облачность, туман'}];
@@ -216,34 +239,219 @@
     function dbzR(dbz){if(dbz<S.minDbz)return null;for(const p of RADAR_PAL)if(dbz>=p.v)return p;return null;}
     function dbzW(dbz){if(dbz<S.minDbz)return null;for(const p of WX_PAL)if(dbz>=p.a&&dbz<=p.b)return p;return null;}
 
-    const BASEMAPS = { carto: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' };
-    const map = L.map('map', { center: DEF.defaultCenter, zoom: DEF.defaultZoom, maxZoom: S.maxZoom, minZoom: S.minZoom, zoomControl: true, worldCopyJump: true, fadeAnimation: false });
+    const BASEMAPS = { 
+        carto: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
+        dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    };
+    
+    // ВНИМАНИЕ: zoomControl установлен в false!
+    const map = L.map('map', { center: DEF.defaultCenter, zoom: DEF.defaultZoom, maxZoom: S.maxZoom, minZoom: S.minZoom, zoomControl: false, worldCopyJump: true, fadeAnimation: false });
     let baseLayer = L.tileLayer(BASEMAPS[S.basemap], { subdomains: ['a','b','c','d'], maxZoom: 20, minZoom: S.minZoom, crossOrigin: true }).addTo(map);
     const labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', { subdomains: ['a','b','c','d'], maxZoom: 20, minZoom: S.minZoom, crossOrigin: true });
     if(S.labelsVisible) labelsLayer.addTo(map);
 
     const airports = [
-        {n:"Внуково (Москва)",lat:55.5917,lng:37.2611},{n:"Борщево (Воронеж)",lat:51.8161,lng:39.2297},{n:"Гумрак (Волгоград)",lat:48.7825,lng:44.3461},{n:"Шпаковское (Ставрополь)",lat:45.1092,lng:42.1128},{n:"Мин. Воды",lat:44.2250,lng:43.0833},{n:"Сочи",lat:43.4500,lng:39.9567},{n:"Павлодар (Казахстан)",lat:52.1947,lng:77.0739},{n:"Астана",lat:51.0222,lng:71.4669},{n:"Талдыкорган",lat:45.1260,lng:78.4370},{n:"Алматы",lat:43.3521,lng:77.0405},{n:"Караганда (Сары-Арка)",lat:49.6708,lng:73.3344},{n:"Актау",lat:43.8600,lng:51.0919},{n:"Тараз",lat:42.8536,lng:71.3036},{n:"Пашковский (Краснодар)",lat:45.0347,lng:39.1705},{n:"Уфа",lat:54.5575,lng:55.8742},{n:"Минск",lat:53.8825,lng:28.0308},{n:"Могилёв",lat:53.9549,lng:30.0951},{n:"Брест",lat:52.1083,lng:23.8981},{n:"Смоленск",lat:54.823,lng:32.028},{n:"Псков",lat:57.7833,lng:28.3950},{n:"Казань",lat:55.6083,lng:49.2744},{n:"Тюмень",lat:57.1897,lng:65.3270},{n:"Толмачёво (Новосибирск)",lat:55.0126,lng:82.6507},{n:"Челябинск",lat:55.3058,lng:61.5033},{n:"Пермь",lat:57.9147,lng:56.0263},{n:"Самара",lat:53.5047,lng:50.1647},{n:"Саранск",lat:54.1258,lng:45.2158},{n:"Саратов",lat:51.5650,lng:46.0467},{n:"Тамбов",lat:52.8061,lng:41.4828},{n:"Нижний Новгород",lat:56.2300,lng:43.7850},{n:"Вологда",lat:59.2825,lng:39.9444},{n:"Санкт-Петербург (Пулково)",lat:59.8003,lng:30.2625},{n:"Петропавловск",lat:53.2228,lng:63.5430},{n:"Усть-Каменогорск",lat:50.0247,lng:82.5140},{n:"Актобе",lat:50.2559,lng:57.2012},{n:"Орал",lat:51.1371,lng:51.5276},{n:"Мурманск",lat:68.7908,lng:32.7374},{n:"Архангельск",lat:64.6247,lng:40.5113},{n:"Калевала",lat:65.2085,lng:31.1377},{n:"Петрозаводск",lat:61.8202,lng:34.2389},{n:"Миллерово",lat:48.9470,lng:40.4105},{n:"Махачкала",lat:42.8121,lng:47.6616},{n:"Атырау",lat:47.1307,lng:51.8190}
+        {n:"Внуково (Москва)",lat:55.5917,lng:37.2611},{n:"Борщево (Воронеж)",lat:51.8161,lng:39.2297},{n:"Гумрак (Волгоград)",lat:48.7825,lng:44.3461},{n:"Шпаковское (Ставрополь)",lat:45.1092,lng:42.1128},{n:"Мин. Воды",lat:44.2250,lng:43.0833},{n:"Сочи",lat:43.4500,lng:39.9567},
+        {n:"Актау",lat:43.8600,lng:51.0919},{n:"Пашковский (Краснодар)",lat:45.0347,lng:39.1705},{n:"Уфа",lat:54.5575,lng:55.8742},{n:"Минск",lat:53.8825,lng:28.0308},{n:"Могилёв",lat:53.9549,lng:30.0951},{n:"Брест",lat:52.1083,lng:23.8981},{n:"Смоленск",lat:54.823,lng:32.028},{n:"Псков",lat:57.7833,lng:28.3950},{n:"Казань",lat:55.6083,lng:49.2744},{n:"Тюмень",lat:57.1897,lng:65.3270},
+        {n:"Челябинск",lat:55.3058,lng:61.5033},{n:"Пермь",lat:57.9147,lng:56.0263},{n:"Самара",lat:53.5047,lng:50.1647},{n:"Саранск",lat:54.1258,lng:45.2158},{n:"Саратов",lat:51.5650,lng:46.0467},{n:"Тамбов",lat:52.8061,lng:41.4828},{n:"Нижний Новгород",lat:56.2300,lng:43.7850},{n:"Вологда",lat:59.2825,lng:39.9444},{n:"Санкт-Петербург (Пулково)",lat:59.8003,lng:30.2625},{n:"Петропавловск",lat:53.2228,lng:63.5430},
+        {n:"Актобе",lat:50.2559,lng:57.2012},{n:"Орал",lat:51.1371,lng:51.5276},{n:"Мурманск",lat:68.7908,lng:32.7374},{n:"Архангельск",lat:64.6247,lng:40.5113},{n:"Калевала",lat:65.2085,lng:31.1377},{n:"Петрозаводск",lat:61.8202,lng:34.2389},{n:"Миллерово",lat:48.9470,lng:40.4105},{n:"Махачкала",lat:42.8121,lng:47.6616},{n:"Атырау",lat:47.1307,lng:51.8190}
     ];
-    const circleLayers = []; const circList = document.getElementById('circ-list');
-    airports.forEach((ap, idx) => {
-        ap.active = true;
-        const c = L.circle([ap.lat, ap.lng], { radius: 250000, color: '#000000', opacity: 0.3, fillOpacity: 0, weight: 2.5, interactive: false }).addTo(map); 
-        circleLayers.push({ ap: ap, layer: c });
-        const div = document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.padding='5px 0'; div.style.borderBottom='1px solid var(--border)';
-        div.innerHTML = `<span>${ap.n}</span><input type="checkbox" checked data-idx="${idx}">`; circList.appendChild(div);
+    
+    const circleLayers = []; 
+    const circList = document.getElementById('circ-list');
+    const spList = document.getElementById('sp-list');
+    
+    let staticMaskLayer = null;
+    let activeStaticIdx = -1;
+
+    function getCirclePoints(lat, lng, radius) {
+        const R = 6378137;
+        const d = radius / R;
+        const lat1 = lat * Math.PI / 180;
+        const lng1 = lng * Math.PI / 180;
+        const points = [];
+        for (let i = 0; i <= 360; i += 2) {
+            const brng = i * Math.PI / 180;
+            const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
+            const lng2 = lng1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+            points.push([lat2 * 180 / Math.PI, lng2 * 180 / Math.PI]);
+        }
+        return points;
+    }
+
+    function updateSpHighlights() {
+        document.querySelectorAll('.sp-item').forEach(el => {
+            if (el.dataset.idx === String(activeStaticIdx)) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    }
+
+    function disableStaticMode() {
+        S.staticMode = false;
+        activeStaticIdx = -1;
+        if (staticMaskLayer) { map.removeLayer(staticMaskLayer); staticMaskLayer = null; }
+        
+        circList.querySelectorAll('input').forEach(i => {
+            const cIdx = i.dataset.idx;
+            if (circleLayers[cIdx].ap.active) {
+                if (!map.hasLayer(circleLayers[cIdx].layer)) map.addLayer(circleLayers[cIdx].layer);
+            } else {
+                if (map.hasLayer(circleLayers[cIdx].layer)) map.removeLayer(circleLayers[cIdx].layer);
+            }
+        });
+        updateSpHighlights();
+        forceFullRefresh();
+    }
+
+    function enableStaticMode(idx) {
+        S.staticMode = true;
+        activeStaticIdx = idx === 'all' ? 'all' : parseInt(idx);
+        S.clipping = true;
+        document.getElementById('btn-clip').classList.add('on');
+
+        circleLayers.forEach(cObj => {
+            if (map.hasLayer(cObj.layer)) map.removeLayer(cObj.layer);
+        });
+
+        if (staticMaskLayer) map.removeLayer(staticMaskLayer);
+        
+        const outer = [[-90, -360], [90, -360], [90, 360], [-90, 360]];
+        const polygons = [outer];
+        
+        if (idx === 'all') {
+            airports.forEach(ap => polygons.push(getCirclePoints(ap.lat, ap.lng, 250000)));
+        } else {
+            const ap = circleLayers[idx].ap;
+            polygons.push(getCirclePoints(ap.lat, ap.lng, 250000));
+            map.setView([ap.lat, ap.lng], 7);
+        }
+
+        staticMaskLayer = L.polygon(polygons, {
+            fillColor: '#000000',
+            fillOpacity: 0.2,
+            color: '#666666',
+            opacity: 0.3, // Уменьшенная прозрачность обводки 
+            weight: 3,
+            interactive: false
+        }).addTo(map);
+
+        updateSpHighlights();
+        trf();
+        document.getElementById('side-panel').classList.remove('open');
+    }
+
+    // Добавляем пункт "Все радары"
+    const spAllDiv = document.createElement('div');
+    spAllDiv.className = 'sp-item';
+    spAllDiv.textContent = 'Все радары (Общая маска)';
+    spAllDiv.dataset.idx = 'all';
+    spAllDiv.addEventListener('click', () => {
+        if (activeStaticIdx === 'all') {
+            disableStaticMode();
+            showToast('Интерактивный режим');
+        } else {
+            enableStaticMode('all');
+            showToast('Статичный снимок: Все радары');
+        }
     });
-    circList.addEventListener('change', e => { if(e.target.tagName==='INPUT') { const idx=e.target.dataset.idx; circleLayers[idx].ap.active=e.target.checked; if(e.target.checked) map.addLayer(circleLayers[idx].layer); else map.removeLayer(circleLayers[idx].layer); if(S.clipping) forceFullRefresh(); } });
-    document.getElementById('btn-circ-all').addEventListener('click', () => { circList.querySelectorAll('input').forEach(i => { i.checked=true; circleLayers[i.dataset.idx].ap.active=true; if(!map.hasLayer(circleLayers[i.dataset.idx].layer)) map.addLayer(circleLayers[i.dataset.idx].layer); }); if(S.clipping) forceFullRefresh(); });
-    document.getElementById('btn-circ-none').addEventListener('click', () => { circList.querySelectorAll('input').forEach(i => { i.checked=false; circleLayers[i.dataset.idx].ap.active=false; if(map.hasLayer(circleLayers[i.dataset.idx].layer)) map.removeLayer(circleLayers[i.dataset.idx].layer); }); if(S.clipping) forceFullRefresh(); });
+    spList.appendChild(spAllDiv);
+
+    airports.forEach((ap, idx) => {
+        ap.active = false;
+        const c = L.circle([ap.lat, ap.lng], { radius: 250000, color: '#000000', opacity: 0.3, fillOpacity: 0, weight: 2.5, interactive: false }); 
+        circleLayers.push({ ap: ap, layer: c });
+        
+        const div = document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.padding='5px 0'; div.style.borderBottom='1px solid var(--border)';
+        div.innerHTML = `<span>${ap.n}</span><input type="checkbox" data-idx="${idx}">`; circList.appendChild(div);
+
+        const spDiv = document.createElement('div');
+        spDiv.className = 'sp-item';
+        spDiv.textContent = ap.n;
+        spDiv.dataset.idx = idx;
+        spDiv.addEventListener('click', () => {
+            if (activeStaticIdx === idx) {
+                disableStaticMode();
+                showToast('Интерактивный режим');
+            } else {
+                enableStaticMode(idx);
+                showToast('Статичный снимок: ' + ap.n);
+            }
+        });
+        spList.appendChild(spDiv);
+    });
+
+    circList.addEventListener('change', e => { 
+        if(e.target.tagName==='INPUT') { 
+            if (S.staticMode) disableStaticMode(); 
+            const idx=e.target.dataset.idx; 
+            circleLayers[idx].ap.active=e.target.checked; 
+            if(e.target.checked) map.addLayer(circleLayers[idx].layer); 
+            else map.removeLayer(circleLayers[idx].layer); 
+            forceFullRefresh(); 
+        } 
+    });
+    
+    document.getElementById('btn-circ-all').addEventListener('click', () => { 
+        if (S.staticMode) disableStaticMode(); 
+        circList.querySelectorAll('input').forEach(i => { i.checked=true; circleLayers[i.dataset.idx].ap.active=true; if(!map.hasLayer(circleLayers[i.dataset.idx].layer)) map.addLayer(circleLayers[i.dataset.idx].layer); }); forceFullRefresh(); 
+    });
+    document.getElementById('btn-circ-none').addEventListener('click', () => { 
+        if (S.staticMode) disableStaticMode(); 
+        circList.querySelectorAll('input').forEach(i => { i.checked=false; circleLayers[i.dataset.idx].ap.active=false; if(map.hasLayer(circleLayers[i.dataset.idx].layer)) map.removeLayer(circleLayers[i.dataset.idx].layer); }); forceFullRefresh(); 
+    });
+    
     document.getElementById('btn-circles').addEventListener('click', () => document.getElementById('modal-circles').classList.add('open'));
     document.getElementById('circles-close').addEventListener('click', () => document.getElementById('modal-circles').classList.remove('open'));
-    document.getElementById('btn-clip').addEventListener('click', function() { S.clipping = !S.clipping; this.classList.toggle('on', S.clipping); forceFullRefresh(); showToast('Обрезка: ' + (S.clipping ? 'ВКЛ' : 'ВЫКЛ')); });
+    
+    document.getElementById('btn-side-panel').addEventListener('click', () => document.getElementById('side-panel').classList.add('open'));
+    document.getElementById('sp-close').addEventListener('click', () => document.getElementById('side-panel').classList.remove('open'));
+
+    document.getElementById('btn-clip').addEventListener('click', function() { 
+        if (S.staticMode) {
+            showToast('В режиме снимков обрезка всегда включена');
+            return;
+        }
+        S.clipping = !S.clipping; this.classList.toggle('on', S.clipping); forceFullRefresh(); showToast('Обрезка: ' + (S.clipping ? 'ВКЛ' : 'ВЫКЛ')); 
+    });
 
     function applyClippingMask(ctx, z, x, y) {
-        if(!S.clipping) return; ctx.save(); ctx.globalCompositeOperation = 'destination-in'; ctx.fillStyle = '#fff'; ctx.beginPath(); const nwPoint = new L.Point(x * 256, y * 256); let hasActive = false;
-        circleLayers.forEach(cObj => { if(!cObj.ap.active) return; hasActive = true; const centerPt = map.project([cObj.ap.lat, cObj.ap.lng], z); const cx = centerPt.x - nwPoint.x; const cy = centerPt.y - nwPoint.y; const metersPerPixel = 40075016 * Math.cos(cObj.ap.lat * Math.PI / 180) / Math.pow(2, z + 8); const r = 250000 / metersPerPixel; ctx.moveTo(cx + r, cy); ctx.arc(cx, cy, r, 0, Math.PI * 2); });
-        if(hasActive) ctx.fill(); else ctx.clearRect(0,0,256,256); ctx.restore();
+        if(!S.clipping) return;
+        
+        let radarsToClip = [];
+        if (S.staticMode && activeStaticIdx !== -1) {
+            if (activeStaticIdx === 'all') {
+                radarsToClip = circleLayers;
+            } else {
+                radarsToClip.push(circleLayers[activeStaticIdx]);
+            }
+        } else {
+            radarsToClip = circleLayers.filter(cObj => cObj.ap.active);
+        }
+
+        if(radarsToClip.length === 0) return;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        const nwPoint = new L.Point(x * 256, y * 256);
+        
+        radarsToClip.forEach(cObj => {
+            const centerPt = map.project([cObj.ap.lat, cObj.ap.lng], z);
+            const cx = centerPt.x - nwPoint.x;
+            const cy = centerPt.y - nwPoint.y;
+            const metersPerPixel = 40075016 * Math.cos(cObj.ap.lat * Math.PI / 180) / Math.pow(2, z + 8);
+            const r = 250000 / metersPerPixel;
+            ctx.moveTo(cx + r, cy);
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        });
+        
+        ctx.fill();
+        ctx.restore();
     }
 
     function buildLegend() {
@@ -255,21 +463,44 @@
         });
     } buildLegend();
 
-    function updateTimebox() { const d = new Date(S.ts * 1000); document.getElementById('tp-time').textContent = d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow'}); document.getElementById('tp-date').textContent = d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', timeZone:'Europe/Moscow'}); }
+    function updateTimebox() { 
+        const d = new Date(S.ts * 1000); 
+        document.getElementById('tp-time').textContent = d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow'}); 
+        const day = String(d.getDate()).padStart(2, '0');
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        document.getElementById('tp-date').textContent = `${day}.${mo}`; 
+    }
 
     document.getElementById('btn-archive').addEventListener('click', function() { const tl = document.getElementById('timeline'); tl.classList.toggle('show'); this.classList.toggle('on'); if(tl.classList.contains('show')) buildFrames(); });
     function buildFrames() { const lt=nowTs(), od=lt-DEF.timelineHours*3600; const f=[]; for(let t=od; t<=lt; t+=600) f.push(t); S.frames=f; buildLabels(); updateThumb(); }
     function buildLabels() { const el=document.getElementById('tl-lbls'); el.innerHTML=''; const f=S.frames, N=7; for(let i=0;i<N;i++){ const ts=f[Math.round(i/(N-1)*(f.length-1))]; const s=document.createElement('span'); s.textContent=new Date(ts*1000).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'}); el.appendChild(s); } }
     function updateThumb() { const f=S.frames; if(!f.length) return; const pct=Math.max(0,Math.min(1,(S.ts-f[0])/(f[f.length-1]-f[0]))); document.getElementById('trackfill').style.width=(pct*100)+'%'; document.getElementById('trackthumb').style.left=(pct*100)+'%'; }
     function trTs(cx) { const r=document.getElementById('track').getBoundingClientRect(); const pct=Math.max(0,Math.min(1,(cx-r.left)/r.width)); return S.frames[Math.round(pct*(S.frames.length-1))]||S.ts; }
-    let dragging=false; document.getElementById('track').addEventListener('pointerdown',e=>{dragging=true;S.ts=trTs(e.clientX);refresh(true);e.currentTarget.setPointerCapture(e.pointerId);}); document.getElementById('track').addEventListener('pointermove',e=>{if(!dragging)return;S.ts=trTs(e.clientX);refresh(true);}); document.addEventListener('pointerup',()=>{dragging=false;});
+    
+    function trf() {
+        setTimeout(forceFullRefresh, 100);
+        setTimeout(forceFullRefresh, 800);
+    }
+
+    let dragging=false; document.getElementById('track').addEventListener('pointerdown',e=>{dragging=true;S.ts=trTs(e.clientX);refresh(true);e.currentTarget.setPointerCapture(e.pointerId);}); document.getElementById('track').addEventListener('pointermove',e=>{if(!dragging)return;S.ts=trTs(e.clientX);refresh(true);}); 
+    document.addEventListener('pointerup',()=>{
+        if(dragging){
+            dragging=false;
+            trf();
+        }
+    });
     
     let rth=null; function refresh(thr) { updateTimebox(); updateThumb(); S.frameVersion++; if(thr) { clearTimeout(rth); rth=setTimeout(()=>{dataLayer.redraw();},60); } else { dataLayer.redraw(); } }
     function ams() { return DEF.animFrameMs/DEF.animSpeeds[S.speedI]; } function astep() { S.frameI=(S.frameI+1)%S.frames.length; S.ts=S.frames[S.frameI]; S.failed.clear(); S.frameVersion++; refresh(); }
     function startAnim() { buildFrames(); S.frameI=0; if(S.timer) clearInterval(S.timer); S.timer=setInterval(astep, ams()); const b=document.getElementById('playbtn'); b.textContent='\u25A0'; b.classList.add('playing'); S.playing=true; }
     function stopAnim() { clearInterval(S.timer); S.timer=null; S.playing=false; const b=document.getElementById('playbtn'); b.textContent='\u25B6'; b.classList.remove('playing'); }
     document.getElementById('playbtn').addEventListener('click', ()=>S.playing?stopAnim():startAnim()); document.getElementById('speedbadge').addEventListener('click', ()=>{S.speedI=(S.speedI+1)%DEF.animSpeeds.length;document.getElementById('speedbadge').textContent=DEF.animSpeeds[S.speedI]+'x';if(S.playing){clearInterval(S.timer);S.timer=setInterval(astep,ams());}});
-    function st(d){stopAnim();S.ts+=d;S.frameVersion++;refresh();} document.getElementById('btn-p60').addEventListener('click',()=>st(-3600)); document.getElementById('btn-p30').addEventListener('click',()=>st(-1800)); document.getElementById('btn-p10').addEventListener('click',()=>st(-600)); document.getElementById('btn-n10').addEventListener('click',()=>st(600)); document.getElementById('btn-n30').addEventListener('click',()=>st(1800)); document.getElementById('btn-now').addEventListener('click',()=>{stopAnim();S.ts=nowTs();S.frameVersion++;refresh();});
+    
+    function st(d){
+        stopAnim(); S.ts+=d; S.frameVersion++; refresh();
+        trf(); 
+    } 
+    document.getElementById('btn-p60').addEventListener('click',()=>st(-3600)); document.getElementById('btn-p30').addEventListener('click',()=>st(-1800)); document.getElementById('btn-p10').addEventListener('click',()=>st(-600)); document.getElementById('btn-n10').addEventListener('click',()=>st(600)); document.getElementById('btn-n30').addEventListener('click',()=>st(1800)); document.getElementById('btn-now').addEventListener('click',()=>{stopAnim();S.ts=nowTs();S.frameVersion++;refresh();trf();});
 
     function ck(type,ts,z,x,y){return `${type}|${ts}|${z}|${x}|${y}`;}
     function mkC(w,h){const c=document.createElement('canvas');c.width=w||256;c.height=h||256;return c;}
@@ -335,8 +566,24 @@
     document.querySelectorAll('.mbar-dropdown').forEach(dd => { dd.addEventListener('click', e => { const item = e.target.closest('.mitem'); if(!item) return; const act = item.dataset.action; if(act) handleAction(act); closeAllMenus(); }); });
 
     function handleAction(act) {
-        if(act === 'basemap-carto') { S.basemap = 'carto'; baseLayer.setUrl(BASEMAPS.carto); document.getElementById('chk-carto').innerHTML = '&#x2713;'; document.getElementById('chk-dark').innerHTML = ''; }
-        if(act === 'basemap-dark') { S.basemap = 'dark'; baseLayer.setUrl(BASEMAPS.dark); document.getElementById('chk-dark').innerHTML = '&#x2713;'; document.getElementById('chk-carto').innerHTML = ''; }
+        if(act === 'basemap-carto') { 
+            S.basemap = 'carto'; baseLayer.setUrl(BASEMAPS.carto); 
+            document.getElementById('chk-carto').innerHTML = '&#x2713;'; 
+            document.getElementById('chk-dark').innerHTML = ''; 
+            document.getElementById('chk-osm').innerHTML = ''; 
+        }
+        if(act === 'basemap-dark') { 
+            S.basemap = 'dark'; baseLayer.setUrl(BASEMAPS.dark); 
+            document.getElementById('chk-dark').innerHTML = '&#x2713;'; 
+            document.getElementById('chk-carto').innerHTML = ''; 
+            document.getElementById('chk-osm').innerHTML = ''; 
+        }
+        if(act === 'basemap-osm') { 
+            S.basemap = 'osm'; baseLayer.setUrl(BASEMAPS.osm); 
+            document.getElementById('chk-osm').innerHTML = '&#x2713;'; 
+            document.getElementById('chk-carto').innerHTML = ''; 
+            document.getElementById('chk-dark').innerHTML = ''; 
+        }
         if(act === 'toggle-labels') { S.labelsVisible = !S.labelsVisible; if(S.labelsVisible) labelsLayer.addTo(map); else map.removeLayer(labelsLayer); document.getElementById('chk-labels').innerHTML = S.labelsVisible ? '&#x2713;' : ''; dataLayer.bringToFront(); }
         if(act === 'layer-radar') { S.layer = 'radar'; buildLegend(); forceFullRefresh(); document.getElementById('chk-l-radar').innerHTML = '&#x2713;'; document.getElementById('chk-l-wx').innerHTML = ''; }
         if(act === 'layer-wx') { S.layer = 'wx'; buildLegend(); forceFullRefresh(); document.getElementById('chk-l-wx').innerHTML = '&#x2713;'; document.getElementById('chk-l-radar').innerHTML = ''; }
@@ -386,6 +633,18 @@
     function showToast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
     setInterval(() => { if(!S.playing && nowTs()!==S.ts) showToast('Новые данные готовы'); buildFrames(); }, 60000);
     buildFrames(); updateTimebox(); refresh();
+
+    trf(); 
+
+    let mapInteractTimer = null;
+    map.on('moveend zoomend', () => {
+        clearTimeout(mapInteractTimer);
+        mapInteractTimer = setTimeout(() => {
+            S.failed.clear();
+            trf();
+        }, 300);
+    });
+
 })();
 </script>
 </body>
